@@ -140,7 +140,8 @@ export function SimulatorPage() {
       const h = canvas!.height / dpr;
 
       ctx!.save();
-      ctx!.scale(dpr * RS, dpr * RS);
+      - ctx!.scale(dpr * RS, dpr * RS);
+      + ctx!.scale(dpr / RS, dpr / RS);
 
       switch (appMode) {
         case 'flight': {
