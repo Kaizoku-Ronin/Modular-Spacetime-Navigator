@@ -1,0 +1,172 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* shadcn defaults (dark theme) */
+    --background: 220 40% 3%;
+    --foreground: 180 20% 90%;
+    --card: 220 40% 5%;
+    --card-foreground: 180 20% 90%;
+    --popover: 220 40% 5%;
+    --popover-foreground: 180 20% 90%;
+    --primary: 174 72% 58%;
+    --primary-foreground: 220 40% 3%;
+    --secondary: 220 20% 12%;
+    --secondary-foreground: 180 20% 90%;
+    --muted: 220 20% 12%;
+    --muted-foreground: 180 10% 43%;
+    --accent: 220 20% 12%;
+    --accent-foreground: 180 20% 90%;
+    --destructive: 348 100% 63%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 174 72% 58% / 0.12;
+    --input: 220 20% 15%;
+    --ring: 174 72% 58%;
+    --radius: 0.5rem;
+
+    /* Design tokens */
+    --bg: #03050a;
+    --safe: #46e0d2;
+    --warn: #ffb648;
+    --alert: #ff4466;
+    --ink: #cfe7e6;
+    --ink-dim: #5f7e7d;
+    --panel: rgba(6, 12, 18, 0.72);
+    --hair: rgba(70, 224, 210, 0.18);
+    --lane-galactic: #9b59ff;
+    --hyper-flash: #ffffff;
+    --tunnel-core: #aaddff;
+    --tunnel-edge: #1a33aa;
+
+    /* Easing */
+    --ease-ui: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-snap: cubic-bezier(0.68, -0.2, 0.265, 1.2);
+    --ease-dramatic: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 40px;
+    --space-2xl: 64px;
+    --space-3xl: 100px;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+  }
+
+  #root {
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Lore page overrides — applied via JS class toggling */
+  html.lore-page, html.lore-page body {
+    overflow: visible;
+    touch-action: auto;
+    -webkit-user-select: auto;
+    user-select: auto;
+    height: auto;
+  }
+
+  html.lore-page #root {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+@layer utilities {
+  /* Pulse animation for pulsing dot */
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* Slide in from right */
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Pulse glow for hyperjump button */
+  @keyframes pulse-glow {
+    0% {
+      box-shadow: 0 0 0 0 rgba(155, 89, 255, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 12px rgba(155, 89, 255, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(155, 89, 255, 0);
+    }
+  }
+
+  /* Fade in */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Slide up */
+  @keyframes slideUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* ── Lore Page Animations ── */
+
+  /* Cusp diagram rotations */
+  @keyframes cuspRotateCW {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  @keyframes cuspRotateCCW {
+    from { transform: rotate(360deg); }
+    to   { transform: rotate(0deg); }
+  }
+
+  /* Scroll indicator dot */
+  @keyframes scrollDot {
+    0%   { transform: translateY(0); opacity: 1; }
+    70%  { transform: translateY(36px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 0; }
+  }
+
+  /* Spectral bar grow animation */
+  @keyframes spectralBarGrow {
+    from { width: 0; }
+    to   { width: var(--bar-width, 100%); }
+  }
+}
