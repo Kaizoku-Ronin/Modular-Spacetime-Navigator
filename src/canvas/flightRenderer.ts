@@ -546,7 +546,8 @@ function drawVignette(ctx: CanvasRenderingContext2D, s: FlightState) {
 export function renderFlight(ctx: CanvasRenderingContext2D, s: FlightState) {
   ctx.globalAlpha = 1;
   ctx.fillStyle = '#03050a';
-  ctx.fillRect(0, 0, s.W, s.H);
+  - ctx.fillRect(0, 0, s.W, s.H);
+  + ctx.fillRect(-2, -2, s.W + 4, s.H + 4);
   bhGeom(s);
 
   drawStars(ctx, s);
