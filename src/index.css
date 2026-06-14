@@ -170,3 +170,52 @@
     to   { width: var(--bar-width, 100%); }
   }
 }
+
+/* ---- Speed slider (FlightControls) — touch-friendly ---- */
+.speed-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 150px;
+  max-width: 42vw;
+  height: 4px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #1d6b66, #46e0d2);
+  outline: none;
+  cursor: pointer;
+}
+.speed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #cfe7e6;
+  border: 2px solid #46e0d2;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(70, 224, 210, 0.6);
+}
+.speed-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #cfe7e6;
+  border: 2px solid #46e0d2;
+  cursor: pointer;
+}
+
+/* ---- Mobile: shrink the corner HUD panels so they fit small screens ---- */
+@media (max-width: 640px) {
+  .hud-panel {
+    transform: scale(0.78);
+    transform-origin: top left;
+  }
+  .chrono-panel {
+    transform: scale(0.78);
+    transform-origin: top right;
+  }
+}
+@media (max-width: 380px) {
+  .hud-panel,
+  .chrono-panel {
+    transform: scale(0.68);
+  }
+}

@@ -16,6 +16,7 @@ import { createJumpState, resetJump, renderJump, updateJump, isJumpComplete, get
 import { loadStars, loadLanes } from '../data/starData';
 import type { Star, Lane } from '../data/starData';
 import { Chronometer } from '../components/Chronometer';
+import { FlightControls } from '../components/FlightControls';
 import { createClock, tickClock, resetClock, saveClock } from '../lib/clock';
 
 const RS = 0.58; // render scale (flight)
@@ -251,6 +252,36 @@ export function SimulatorPage() {
   // Mouse/touch handlers for starmap
   const dragRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+  const pinchRef = useRef<number | null>(null);
+
+  // Pinch-to-zoom for the starmap on touch devices. touch-action:none on the
+  // canvas already suppresses native gestures, so no preventDefault needed.
+  const touchDist = (e: React.TouchEvent) =>
+    Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (appMode === 'starmap' && e.touches.length === 2) {
+      pinchRef.current = touchDist(e);
+      dragRef.current = false;
+      starmapRef.current.autoRotate = false;
+      starmapRef.current.idleTime = 0;
+    }
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (appMode === 'starmap' && e.touches.length === 2 && pinchRef.current != null) {
+      const d = touchDist(e);
+      starmapRef.current.distanceTarget = Math.max(
+        100,
+        Math.min(1200, starmapRef.current.distanceTarget + (pinchRef.current - d) * 1.5)
+      );
+      pinchRef.current = d;
+    }
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) pinchRef.current = null;
+  };
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (appMode === 'starmap') {
@@ -375,6 +406,7 @@ export function SimulatorPage() {
                 ? 'grab'
                 : 'default',
           imageRendering: 'pixelated',
+          touchAction: 'none',
         }}
         onPointerDown={(e) => {
           handlePointerDown(e);
@@ -389,12 +421,16 @@ export function SimulatorPage() {
           handleFlightPointerMove(e);
         }}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       />
 
       <Navbar />
 
       {appMode === 'flight' && <HUD hudData={hudData} />}
       {appMode === 'flight' && <Chronometer data={chrono} onReset={() => resetClock(clockRef.current)} />}
+      {appMode === 'flight' && <FlightControls />}
 
       {appMode === 'starmap' && (
         <>

@@ -1,11 +1,18 @@
 # Modular Spacetime Navigator
 
+**▶ Play it live: https://kaizoku-ronin.github.io/Modular-Spacetime-Navigator/**
+
 An interactive, relativistically-correct flight simulator built around MTFT's
 X₀(143) black hole, extended with a real nearby-star catalog, a 3D starmap, and
 hyperjumps between per-star flight systems.
 
 Three modes: **Flight** (1-AU scene around a system's black hole), **Starmap**
 (3D catalog + hyperspace lanes), and **Hyperjump** (warp transition).
+
+Works on desktop and touch devices. **Desktop:** drag to steer, scroll or the
+on-screen slider for speed, `Space` to pause, `Tab` to switch modes, `R` to
+reset. **Mobile:** drag to steer, on-screen pause + speed controls, tap the bar
+to switch modes, pinch the starmap to zoom.
 
 ## Run
 

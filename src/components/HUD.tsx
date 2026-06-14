@@ -42,6 +42,7 @@ export function HUD({ hudData }: { hudData: HUDData }) {
 
   return (
     <div
+      className="hud-panel"
       style={{
         position: 'fixed',
         top: '60px',

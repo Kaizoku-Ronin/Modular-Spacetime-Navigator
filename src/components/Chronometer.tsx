@@ -24,6 +24,7 @@ export function Chronometer({ data, onReset }: { data: ChronoData; onReset: () =
 
   return (
     <div
+      className="chrono-panel"
       style={{
         position: 'fixed',
         top: '60px',
