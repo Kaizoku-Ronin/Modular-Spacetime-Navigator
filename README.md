@@ -4,15 +4,22 @@
 
 An interactive, relativistically-correct flight simulator built around MTFT's
 X₀(143) black hole, extended with a real nearby-star catalog, a 3D starmap, and
-hyperjumps between per-star flight systems.
+hyperjumps between per-star flight systems. The **Sol** system renders the actual
+planets — positions computed live from J2000 Keplerian ephemeris — at true scale.
 
-Three modes: **Flight** (1-AU scene around a system's black hole), **Starmap**
-(3D catalog + hyperspace lanes), and **Hyperjump** (warp transition).
+Three modes: **Flight** (in Sol, cruise the real solar system; every other star
+is a 1-AU black-hole scene), **Starmap** (3D catalog + hyperspace lanes), and
+**Hyperjump** (warp transition).
 
 Works on desktop and touch devices. **Desktop:** drag to steer, scroll or the
 on-screen slider for speed, `Space` to pause, `Tab` to switch modes, `R` to
 reset. **Mobile:** drag to steer, on-screen pause + speed controls, tap the bar
 to switch modes, pinch the starmap to zoom.
+
+Speed has two modes: **Cruise** (0.001–0.2c, for realistic solar-system transit)
+and **Flight** (0.25–0.99c, full relativistic regime). In Sol, a **planet-size
+slider** (1–50×) magnifies the otherwise true-scale — and therefore tiny —
+planets so you can pick them out as you cross the system.
 
 ## Run
 
@@ -32,10 +39,13 @@ Requires Node 18+. No backend — this is a static single-player app.
 src/
   canvas/          imperative canvas renderers (rAF loops)
     flightRenderer.ts    relativistic flight sim (aberration/Doppler/beaming)
+    solarRenderer.ts     real Sol system drawn into the flight camera (Sol only)
     starmapRenderer.ts   3D star + lane map (orbit camera)
     jumpRenderer.ts      hyperjump warp transition
   components/      hand-rolled UI (no component library) + chart widgets
-  data/starData.ts loads public/{stars,lanes}.json into typed records
+  data/
+    starData.ts    loads public/{stars,lanes}.json into typed records
+    solarSystem.ts J2000 Keplerian ephemeris — 8 planets + dwarfs (Sol only)
   lib/
     math3d.ts      vec3 + projection (shared with the original HTML sim)
     colors.ts      spectral colors, Doppler ramp, and the canonical CUSP_COLORS
@@ -61,8 +71,22 @@ galactic time leaves your ship clock ~17 s behind. See `lib/clock.ts` +
 `components/Chronometer.tsx`. Reset it from the panel (it's independent of the
 flight `R` reset, which only repositions you).
 
+**The Sol system (real data).** When the current star is Sol, the flight scene
+swaps the black hole for the actual solar system. Planet positions are computed
+each frame from J2000 Keplerian elements plus their century rates (Standish),
+solved through Kepler's equation — so the layout matches the real sky for today's
+date (Earth lands at ~1.016 AU and its true heliocentric longitude). Radii are
+true-scale and the Sun's color comes from a 5778 K blackbody, which is exactly
+why the planets read as faint dots until you fly close or raise the size slider:
+the emptiness is the point. The same exact SR optics still apply, and because you
+move at a *true* fraction of c, crossing even 1 AU at 0.2c takes a realistically
+long time.
+
 **Tuned for playability (not physical), and labeled as such in code:**
 - Gravity bends heading but holds your chosen cruise speed (arcade flight).
+- In **Sol**, a bounded gravity *sway* gently leans the camera toward the nearest
+  mass — it's a settling positional offset, never a velocity, so it can't
+  accumulate into a crash.
 - Per-system horizon radius scales as `cbrt(mass)`, **not** the physical
   `r_s ∝ mass`, so every system in the catalog is flyable. `GM` *is* linear in
   mass (correct). See the comment in `flightRenderer.ts → initFlightState`.
