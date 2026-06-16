@@ -7,6 +7,7 @@
 import { dot, len } from '../lib/math3d';
 import { tempToRGB } from '../data/solarSystem';
 import type { FlightState } from './flightRenderer';
+import { aberrateLocal } from './flightRenderer';
 import type { Planet } from '../data/solarSystem';
 
 const AU = 100; // world units per AU (matches flightRenderer)
@@ -37,18 +38,25 @@ function projectWorld(
   p: number[],
   cam: number[],
   CX: number, CY: number, FOC: number,
-  right: number[], up: number[], fwd: number[]
+  right: number[], up: number[], fwd: number[],
+  beta: number
 ) {
   const rel = worldToCam(p, cam);
-  const z = dot(rel, fwd);
-  if (z <= 0.001) return null;
-  const xc = dot(rel, right);
-  const yc = dot(rel, up);
+  const dist = len(rel);
+  if (dist < 1e-6) return null;
+  const zTrue = dot(rel, fwd);     // true depth, used for apparent size
+  if (zTrue <= 0.5) return null;   // physically behind/at the camera
+  let dir = [rel[0] / dist, rel[1] / dist, rel[2] / dist];
+  if (beta > 1e-4) dir = aberrateLocal(dir, fwd, beta); // relativistic aberration
+  const zc = dot(dir, fwd);
+  if (zc <= 0.001) return null;
+  const xc = dot(dir, right);
+  const yc = dot(dir, up);
   return {
-    x: CX + (FOC * xc) / z,
-    y: CY - (FOC * yc) / z,
-    z, // depth for sorting
-    dist: len(rel),
+    x: CX + (FOC * xc) / zc,
+    y: CY - (FOC * yc) / zc,
+    z: zTrue, // depth for sorting + size
+    dist,
   };
 }
 
@@ -60,7 +68,7 @@ function drawSun(
   eye: number[]
 ) {
   const sunPos = [0, 0, 0];
-  const pr = projectWorld(sunPos, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd);
+  const pr = projectWorld(sunPos, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd, s.beta);
   if (!pr) { solar.lastSunScreen = null; return; }
   solar.lastSunScreen = { x: pr.x, y: pr.y };
 
@@ -139,16 +147,19 @@ function drawOrbit(
   cam: number[],
   CX: number, CY: number, FOC: number,
   right: number[], up: number[], fwd: number[],
-  isSelected: boolean
+  isSelected: boolean,
+  beta: number
 ) {
+  const fade = Math.max(0, 1 - beta * 1.4); // orbits declutter as you approach light speed
+  if (fade <= 0.02) return;
   ctx.strokeStyle = isSelected
-    ? 'rgba(70,224,210,0.45)'
-    : 'rgba(120,150,170,0.13)';
+    ? `rgba(70,224,210,${(0.45 * fade).toFixed(3)})`
+    : `rgba(120,150,170,${(0.13 * fade).toFixed(3)})`;
   ctx.lineWidth = 1;
   ctx.beginPath();
   let started = false;
   for (const p of path) {
-    const pr = projectWorld(p, cam, CX, CY, FOC, right, up, fwd);
+    const pr = projectWorld(p, cam, CX, CY, FOC, right, up, fwd, beta);
     if (!pr) { started = false; continue; }
     if (!started) {
       ctx.moveTo(pr.x, pr.y);
@@ -341,7 +352,7 @@ export function renderSolarSystem(
 
   // 2. Draw orbit lines
   for (const p of solar.planets) {
-    drawOrbit(ctx, p.path, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd, false);
+    drawOrbit(ctx, p.path, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd, false, s.beta);
   }
 
   // 3. Collect visible planets, sort back-to-front
@@ -351,7 +362,7 @@ export function renderSolarSystem(
   }> = [];
 
   for (const p of solar.planets) {
-    const pr = projectWorld(p.pos, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd);
+    const pr = projectWorld(p.pos, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd, s.beta);
     if (!pr) {
       (p as any)._sx = null;
       continue;

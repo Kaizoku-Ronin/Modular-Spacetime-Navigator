@@ -216,6 +216,14 @@ function rebuild(s: FlightState) {
   s.up = cross(s.right, s.fwd);
 }
 
+// Re-orthonormalize the basis from the current fwd + up (no world-up reference,
+// so it never snaps at the poles). Used by the free-look camera.
+function reortho(s: FlightState) {
+  s.fwd = norm(s.fwd);
+  s.right = norm(cross(s.fwd, s.up));
+  s.up = norm(cross(s.right, s.fwd));
+}
+
 // ---- relativistic optics (EXACT) ----
 export function aberrateLocal(d: number[], fwd: number[], beta: number) {
   if (beta < 1e-4) return d;
@@ -273,12 +281,22 @@ export function stepFlight(s: FlightState, dt: number) {
   const nh = norm(V);
   const ang = Math.acos(clamp(dot(nh, s.fwd), -1, 1));
   const mx = MAXTURN * dt;
+  const oldFwd = [s.fwd[0], s.fwd[1], s.fwd[2]];
   if (ang > mx && ang > 1e-6) {
     s.fwd = norm(rot(s.fwd, norm(cross(s.fwd, nh)), mx));
   } else {
     s.fwd = nh;
   }
-  rebuild(s);
+  // follow the heading change while preserving roll (pole-free)
+  const fax = cross(oldFwd, s.fwd);
+  const fsin = len(fax);
+  if (fsin > 1e-7) {
+    const fa = Math.atan2(fsin, dot(oldFwd, s.fwd));
+    const fn = [fax[0] / fsin, fax[1] / fsin, fax[2] / fsin];
+    s.right = rot(s.right, fn, fa);
+    s.up = rot(s.up, fn, fa);
+  }
+  reortho(s);
   s.cam = [
     s.cam[0] + s.fwd[0] * sp * dt,
     s.cam[1] + s.fwd[1] * sp * dt,
@@ -344,8 +362,11 @@ function drawStars(ctx: CanvasRenderingContext2D, s: FlightState) {
     const da = aberrateLocal(st.d, s.fwd, s.beta);
     const p = projectLocal(da, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd);
     if (!p) continue;
-    let [lsx, lsy] = lens(s, p[0], p[1]);
-    if (s.bhOn && Math.hypot(lsx - s.bx, lsy - s.by) < s.shadowR) continue;
+    let lsx = p[0], lsy = p[1];
+    if (!s.isSolar) {
+      [lsx, lsy] = lens(s, lsx, lsy);
+      if (s.bhOn && Math.hypot(lsx - s.bx, lsy - s.by) < s.shadowR) continue;
+    }
     const D = dopplerLocal(da, s.fwd, s.beta, gamma);
     dot2(ctx, s.W, s.H, lsx, lsy, dColor(D), clamp(Math.pow(D, 2.3), 0.08, 5) * st.b * 0.9, 1.3);
   }
@@ -595,15 +616,14 @@ export function getFlightHUD(s: FlightState) {
 // ---- controls ----
 export function yaw(s: FlightState, a: number) {
   s.fwd = norm(rot(s.fwd, s.up, a));
-  rebuild(s);
+  s.right = norm(rot(s.right, s.up, a));
+  reortho(s);
 }
 
 export function pitch(s: FlightState, a: number) {
-  const nf = norm(rot(s.fwd, s.right, a));
-  if (Math.abs(nf[1]) < 0.96) {
-    s.fwd = nf;
-    rebuild(s);
-  }
+  s.fwd = norm(rot(s.fwd, s.right, a));
+  s.up = norm(rot(s.up, s.right, a));
+  reortho(s);
 }
 
 // Place the camera at `eye` (world units) looking at `target`, with a valid basis.
