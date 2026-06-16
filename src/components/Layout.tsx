@@ -19,6 +19,8 @@ interface AppState {
   showStarPanel: boolean;
 }
 
+export type SpeedMode = 'cruise' | 'flight';
+
 interface AppContextType extends AppState {
   setAppMode: (mode: AppMode) => void;
   setCurrentStar: (star: Star | null) => void;
@@ -30,6 +32,10 @@ interface AppContextType extends AppState {
   triggerJump: (target: Star) => void;
   stars: Star[];
   setStars: (stars: Star[]) => void;
+  speedMode: SpeedMode;
+  setSpeedMode: (mode: SpeedMode) => void;
+  planetScale: number;
+  setPlanetScale: (v: number) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -49,6 +55,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const [jumpTarget, setJumpTarget] = useState<Star | null>(null);
   const [showStarPanel, setShowStarPanel] = useState(false);
   const [stars, setStars] = useState<Star[]>([]);
+  const [speedMode, setSpeedMode] = useState<SpeedMode>('cruise');
+  const [planetScale, setPlanetScale] = useState(10);
 
   const triggerJump = useCallback((target: Star) => {
     setJumpTarget(target);
@@ -76,6 +84,10 @@ export function Layout({ children }: { children: ReactNode }) {
         triggerJump,
         stars,
         setStars,
+        speedMode,
+        setSpeedMode,
+        planetScale,
+        setPlanetScale,
       }}
     >
       {children}

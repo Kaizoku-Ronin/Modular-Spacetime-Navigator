@@ -1,10 +1,12 @@
 // ============================================================
 // SimulatorPage — Main page: canvas + all overlays
 // Manages the rendering loop, mode switching, and input
+// Now with solar system rendering for Sol!
 // ============================================================
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAppState } from '../components/Layout';
+import type { SpeedMode } from '../components/Layout';
 import { Navbar } from '../components/Navbar';
 import { ModeSwitchBar } from '../components/ModeSwitchBar';
 import { HUD } from '../components/HUD';
@@ -13,6 +15,10 @@ import { JumpOverlay } from '../components/JumpOverlay';
 import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, renderFlight, stepFlight, getFlightHUD, yaw, pitch } from '../canvas/flightRenderer';
 import { createStarmapState, resizeStarmap, renderStarmap, updateStarmap, findStarAtMouse, findLaneAtMouse, getStarmapHUD } from '../canvas/starmapRenderer';
 import { createJumpState, resetJump, renderJump, updateJump, isJumpComplete, getJumpProgress } from '../canvas/jumpRenderer';
+import { createSolarState, renderSolarSystem, applySolarGravity, getSolarHUD } from '../canvas/solarRenderer';
+import type { SolarState } from '../canvas/solarRenderer';
+import { buildSolarSystem } from '../data/solarSystem';
+import type { Planet } from '../data/solarSystem';
 import { loadStars, loadLanes } from '../data/starData';
 import type { Star, Lane } from '../data/starData';
 import { Chronometer } from '../components/Chronometer';
@@ -21,15 +27,24 @@ import { createClock, tickClock, resetClock, saveClock } from '../lib/clock';
 
 const RS = 0.58; // render scale (flight)
 
+// Speed mode configuration
+const SPEED_RANGES: Record<SpeedMode, { min: number; max: number }> = {
+  cruise: { min: 0.001, max: 0.2 },
+  flight: { min: 0.25, max: 0.99 },
+};
+
 export function SimulatorPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const flightRef = useRef(createFlightState());
   const starmapRef = useRef(createStarmapState());
   const jumpRef = useRef(createJumpState());
+  const solarRef = useRef<SolarState>(createSolarState());
   const rafRef = useRef(0);
   const lastTimeRef = useRef(0);
   const clockRef = useRef(createClock());
   const lastSaveRef = useRef(0);
+  // Keep planets in a ref so they're accessible in the rAF loop
+  const planetsRef = useRef<Planet[]>([]);
 
   const {
     appMode,
@@ -48,6 +63,8 @@ export function SimulatorPage() {
     setShowStarPanel,
     stars,
     setStars,
+    speedMode,
+    planetScale,
   } = useAppState();
 
   const [lanes, setLanes] = useState<Lane[]>([]);
@@ -70,10 +87,25 @@ export function SimulatorPage() {
     });
   }, []);
 
-  // Initialize flight state when current star changes
+  // Initialize flight state + solar system when current star changes
   useEffect(() => {
     if (currentStar && stars.length > 0) {
       initFlightState(flightRef.current, currentStar);
+
+      // Check if we're in the Sol system
+      const isSol = currentStar.name === 'Sol';
+      flightRef.current.isSolar = isSol;
+
+      if (isSol) {
+        // Build real solar system
+        const planets = buildSolarSystem();
+        planetsRef.current = planets;
+        solarRef.current.planets = planets;
+        solarRef.current.initialized = true;
+      } else {
+        solarRef.current.initialized = false;
+        planetsRef.current = [];
+      }
     }
   }, [currentStar, stars.length]);
 
@@ -120,8 +152,7 @@ export function SimulatorPage() {
       const dt = Math.min((now - lastTimeRef.current) / 1000, 0.05);
       lastTimeRef.current = now;
 
-      // Journey clock: galactic time always advances; ship time runs slow only
-      // during un-paused relativistic flight. Frozen while the flight is paused.
+      // Journey clock
       {
         const flying = appMode === 'flight';
         const frozen = flying && flightRef.current.paused;
@@ -146,11 +177,26 @@ export function SimulatorPage() {
       switch (appMode) {
         case 'flight': {
           const fs = flightRef.current;
+
           if (!fs.paused) {
             stepFlight(fs, dt);
+
+            // Apply solar gravity sway when in Sol system
+            if (fs.isSolar && planetsRef.current.length > 0) {
+              applySolarGravity(fs, solarRef.current, dt, planetsRef.current);
+            }
           }
-          renderFlight(ctx!, fs);
-          setHudData(getFlightHUD(fs));
+
+          // Render: use solar HUD when in Sol, regular HUD otherwise
+          if (fs.isSolar) {
+            renderFlight(ctx!, fs, (ctx2, s) => {
+              renderSolarSystem(ctx2, s, solarRef.current, planetScale, dt);
+            });
+            setHudData(getSolarHUD(fs, solarRef.current));
+          } else {
+            renderFlight(ctx!, fs);
+            setHudData(getFlightHUD(fs));
+          }
           break;
         }
         case 'starmap': {
@@ -173,7 +219,6 @@ export function SimulatorPage() {
           setJumpActive(true);
 
           if (isJumpComplete(js)) {
-            // Jump done — switch to flight at new star
             if (jumpTarget) {
               setCurrentStar(jumpTarget);
               initFlightState(flightRef.current, jumpTarget);
@@ -193,10 +238,11 @@ export function SimulatorPage() {
 
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [appMode, stars, lanes, jumpTarget, setCurrentStar, setAppMode, setJumpTarget]);
+  }, [appMode, stars, lanes, jumpTarget, setCurrentStar, setAppMode, setJumpTarget, planetScale, speedMode]);
 
   // Keyboard controls
   useEffect(() => {
+    const cfg = SPEED_RANGES[speedMode];
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
 
@@ -213,15 +259,16 @@ export function SimulatorPage() {
         if (e.shiftKey) {
           pitch(flightRef.current, 0.05);
         } else {
-          const nb = Math.min(0.99, beta + 0.02);
-          setBeta(nb);
-          flightRef.current.beta = nb;
+          const nb = Math.min(cfg.max, beta + (cfg.max - cfg.min) * 0.05);
+          const clamped = Math.max(cfg.min, nb);
+          setBeta(clamped);
+          flightRef.current.beta = clamped;
         }
       } else if ((k === 's' || k === 'arrowdown') && appMode === 'flight') {
         if (e.shiftKey) {
           pitch(flightRef.current, -0.05);
         } else {
-          const nb = Math.max(0.01, beta - 0.02);
+          const nb = Math.max(cfg.min, beta - (cfg.max - cfg.min) * 0.05);
           setBeta(nb);
           flightRef.current.beta = nb;
         }
@@ -247,15 +294,13 @@ export function SimulatorPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [appMode, selectedStar, beta, isPaused, setAppMode, setPaused, setBeta, setSelectedStar, setShowStarPanel, setJumpTarget]);
+  }, [appMode, selectedStar, beta, isPaused, setAppMode, setPaused, setBeta, setSelectedStar, setShowStarPanel, setJumpTarget, speedMode]);
 
   // Mouse/touch handlers for starmap
   const dragRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const pinchRef = useRef<number | null>(null);
 
-  // Pinch-to-zoom for the starmap on touch devices. touch-action:none on the
-  // canvas already suppresses native gestures, so no preventDefault needed.
   const touchDist = (e: React.TouchEvent) =>
     Math.hypot(
       e.touches[0].clientX - e.touches[1].clientX,
@@ -329,8 +374,9 @@ export function SimulatorPage() {
   const handleWheel = (e: React.WheelEvent) => {
     if (appMode === 'flight') {
       e.preventDefault();
+      const cfg = SPEED_RANGES[speedMode];
       const delta = e.deltaY < 0 ? 0.02 : -0.02;
-      const nb = Math.max(0.01, Math.min(0.99, beta + delta));
+      const nb = Math.max(cfg.min, Math.min(cfg.max, beta + delta));
       setBeta(nb);
       flightRef.current.beta = nb;
     } else if (appMode === 'starmap') {

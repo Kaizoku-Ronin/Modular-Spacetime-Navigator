@@ -14,7 +14,8 @@ interface HUDData {
 }
 
 export function HUD({ hudData }: { hudData: HUDData }) {
-  const { currentStar } = useAppState();
+  const { currentStar, speedMode } = useAppState();
+  const isCruise = speedMode === 'cruise';
 
   const statusConfig = {
     'near-horizon': {
@@ -90,6 +91,22 @@ export function HUD({ hudData }: { hudData: HUDData }) {
           }}
         >
           {systemName} SYSTEM
+        </span>
+        <span
+          style={{
+            fontSize: '8px',
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: isCruise ? '#46e0d2' : '#ffb648',
+            background: isCruise ? 'rgba(70,224,210,0.12)' : 'rgba(255,182,72,0.12)',
+            border: `1px solid ${isCruise ? 'rgba(70,224,210,0.3)' : 'rgba(255,182,72,0.3)'}`,
+            borderRadius: '3px',
+            padding: '2px 6px',
+            marginLeft: '4px',
+          }}
+        >
+          {isCruise ? 'CRUISE' : 'FLIGHT'}
         </span>
       </div>
 

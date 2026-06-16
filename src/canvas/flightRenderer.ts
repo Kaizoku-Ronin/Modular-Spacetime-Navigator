@@ -70,6 +70,8 @@ export interface FlightState {
   by: number;
   shadowR: number;
   bhOn: boolean;
+  // solar system mode
+  isSolar: boolean;
 }
 
 export function createFlightState(): FlightState {
@@ -110,6 +112,7 @@ export function createFlightState(): FlightState {
     by: 0,
     shadowR: 0,
     bhOn: false,
+    isSolar: false,
   };
 }
 
@@ -214,7 +217,7 @@ function rebuild(s: FlightState) {
 }
 
 // ---- relativistic optics (EXACT) ----
-function aberrateLocal(d: number[], fwd: number[], beta: number) {
+export function aberrateLocal(d: number[], fwd: number[], beta: number) {
   if (beta < 1e-4) return d;
   const cT = clamp(dot(d, fwd), -1, 1);
   const cT2 = (cT + beta) / (1 + beta * cT);
@@ -234,7 +237,7 @@ function aberrateLocal(d: number[], fwd: number[], beta: number) {
   ];
 }
 
-function dopplerLocal(da: number[], fwd: number[], beta: number, gamma: number) {
+export function dopplerLocal(da: number[], fwd: number[], beta: number, gamma: number) {
   const cT = clamp(dot(da, fwd), -1, 1);
   return 1 / (gamma * (1 - beta * cT));
 }
@@ -543,19 +546,29 @@ function drawVignette(ctx: CanvasRenderingContext2D, s: FlightState) {
 }
 
 // ---- main render entry ----
-export function renderFlight(ctx: CanvasRenderingContext2D, s: FlightState) {
+export function renderFlight(ctx: CanvasRenderingContext2D, s: FlightState, postRender?: (ctx: CanvasRenderingContext2D, s: FlightState) => void) {
   ctx.globalAlpha = 1;
   ctx.fillStyle = '#03050a';
-  - ctx.fillRect(0, 0, s.W, s.H);
-  + ctx.fillRect(-2, -2, s.W + 4, s.H + 4);
-  bhGeom(s);
+  ctx.fillRect(-2, -2, s.W + 4, s.H + 4);
+
+  if (!s.isSolar) {
+    bhGeom(s);
+  }
 
   drawStars(ctx, s);
   if (s.opt.grid) drawGrid(ctx, s);
   if (s.opt.debris) drawDebris(ctx, s, false);
-  drawBH(ctx, s);
-  if (s.opt.disk) drawDisk(ctx, s);
-  if (s.opt.cusps) drawCusps(ctx, s);
+
+  if (s.isSolar) {
+    // Solar system: postRender callback draws Sun + planets + orbits
+    if (postRender) postRender(ctx, s);
+  } else {
+    // Black hole system
+    drawBH(ctx, s);
+    if (s.opt.disk) drawDisk(ctx, s);
+    if (s.opt.cusps) drawCusps(ctx, s);
+  }
+
   if (s.opt.debris) drawDebris(ctx, s, true);
   drawReticle(ctx, s);
   drawVignette(ctx, s);
