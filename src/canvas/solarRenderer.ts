@@ -65,32 +65,39 @@ function drawSun(
   solar.lastSunScreen = { x: pr.x, y: pr.y };
 
   const [r, g, b] = tempToRGB(5778);
-  const rad = Math.max(3, s.FOC * (696000 / 149597870.7) / pr.z); // true scale sun radius
+  const rad = Math.max(5, s.FOC * ((696000 / 149597870.7) * AU) / pr.z); // true-scale sun radius
 
-  // Multi-layer glow
-  const glow1 = ctx.createRadialGradient(pr.x, pr.y, 0, pr.x, pr.y, rad * 8);
-  glow1.addColorStop(0, `rgba(${r},${g},${b},0.95)`);
-  glow1.addColorStop(0.08, `rgba(${r},${g},${b},0.5)`);
-  glow1.addColorStop(0.3, `rgba(${r},${Math.max(0, g - 40)},${Math.max(0, b - 80)},0.12)`);
-  glow1.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = glow1;
+  // Outer bloom
+  const bloom = ctx.createRadialGradient(pr.x, pr.y, 0, pr.x, pr.y, rad * 14);
+  bloom.addColorStop(0, `rgba(${r},${g},${b},0.55)`);
+  bloom.addColorStop(0.12, `rgba(${r},${g},${b},0.28)`);
+  bloom.addColorStop(0.4, `rgba(${r},${Math.max(0, g - 30)},${Math.max(0, b - 70)},0.07)`);
+  bloom.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = bloom;
   ctx.beginPath();
-  ctx.arc(pr.x, pr.y, rad * 8, 0, Math.PI * 2);
+  ctx.arc(pr.x, pr.y, rad * 14, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Inner glow
+  const glow = ctx.createRadialGradient(pr.x, pr.y, rad * 0.5, pr.x, pr.y, rad * 3.2);
+  glow.addColorStop(0, `rgba(${r},${g},${b},0.95)`);
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(pr.x, pr.y, rad * 3.2, 0, Math.PI * 2);
   ctx.fill();
 
   // Solar disc
   ctx.fillStyle = `rgb(${r},${g},${b})`;
   ctx.beginPath();
-  ctx.arc(pr.x, pr.y, Math.max(2, rad), 0, Math.PI * 2);
+  ctx.arc(pr.x, pr.y, rad, 0, Math.PI * 2);
   ctx.fill();
 
   // Bright core
-  if (rad > 3) {
-    ctx.fillStyle = '#fffaf2';
-    ctx.beginPath();
-    ctx.arc(pr.x, pr.y, rad * 0.7, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  ctx.fillStyle = '#fffdf7';
+  ctx.beginPath();
+  ctx.arc(pr.x, pr.y, rad * 0.62, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 // ---- planet shading (sun-direction) ----
@@ -352,7 +359,7 @@ export function renderSolarSystem(
     // Visual radius: true scale * planetScale
     // True radius in AU = R_km / 149597870.7
     const trueRadAU = p.R / 149597870.7;
-    const rad = Math.max(1.5, s.FOC * (trueRadAU * planetScale) / pr.z);
+    const rad = Math.max(1.5, s.FOC * (trueRadAU * AU * planetScale) / pr.z);
     draws.push({ planet: p, sx: pr.x, sy: pr.y, z: pr.z, rad });
     (p as any)._sx = pr.x;
     (p as any)._sy = pr.y;

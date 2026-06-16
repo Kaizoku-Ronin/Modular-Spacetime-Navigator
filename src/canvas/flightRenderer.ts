@@ -556,8 +556,8 @@ export function renderFlight(ctx: CanvasRenderingContext2D, s: FlightState, post
   }
 
   drawStars(ctx, s);
-  if (s.opt.grid) drawGrid(ctx, s);
-  if (s.opt.debris) drawDebris(ctx, s, false);
+  if (s.opt.grid && !s.isSolar) drawGrid(ctx, s);
+  if (s.opt.debris && !s.isSolar) drawDebris(ctx, s, false);
 
   if (s.isSolar) {
     // Solar system: postRender callback draws Sun + planets + orbits
@@ -569,7 +569,7 @@ export function renderFlight(ctx: CanvasRenderingContext2D, s: FlightState, post
     if (s.opt.cusps) drawCusps(ctx, s);
   }
 
-  if (s.opt.debris) drawDebris(ctx, s, true);
+  if (s.opt.debris && !s.isSolar) drawDebris(ctx, s, true);
   drawReticle(ctx, s);
   drawVignette(ctx, s);
 }
@@ -604,4 +604,12 @@ export function pitch(s: FlightState, a: number) {
     s.fwd = nf;
     rebuild(s);
   }
+}
+
+// Place the camera at `eye` (world units) looking at `target`, with a valid basis.
+export function aimFlightAt(s: FlightState, eye: number[], target: number[]) {
+  s.cam = [eye[0], eye[1], eye[2]];
+  const d = norm([target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]]);
+  if (len(d) > 0.5) s.fwd = d;
+  rebuild(s);
 }

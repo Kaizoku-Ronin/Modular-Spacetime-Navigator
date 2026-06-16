@@ -13,6 +13,8 @@ const SPEED_CONFIG = {
   flight: { min: 0.25, max: 0.99, step: 0.01, label: 'flight' },
 };
 
+const SOL_BODIES = ['Sun', 'Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune'];
+
 export function FlightControls() {
   const {
     beta, setBeta,
@@ -20,6 +22,7 @@ export function FlightControls() {
     speedMode, setSpeedMode,
     currentStar,
     planetScale, setPlanetScale,
+    setHypojumpTarget,
   } = useAppState();
 
   const isSol = currentStar?.name === 'Sol';
@@ -199,6 +202,33 @@ export function FlightControls() {
           >
             {planetScale}x
           </span>
+        </div>
+      )}
+
+      {/* In-system hypojump (Sol only); star-to-star hyperjump is separate */}
+      {isSol && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px', maxWidth: '430px' }}>
+          {SOL_BODIES.map((b) => (
+            <button
+              key={b}
+              onClick={() => setHypojumpTarget(b)}
+              title={`Hypojump to ${b}`}
+              style={{
+                fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+                fontSize: '10px',
+                letterSpacing: '0.04em',
+                color: '#9fd0cb',
+                background: 'rgba(6,12,18,0.72)',
+                border: '1px solid rgba(70,224,210,0.22)',
+                borderRadius: '5px',
+                padding: '4px 9px',
+                cursor: 'pointer',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              {b}
+            </button>
+          ))}
         </div>
       )}
     </div>

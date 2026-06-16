@@ -12,7 +12,7 @@ import { ModeSwitchBar } from '../components/ModeSwitchBar';
 import { HUD } from '../components/HUD';
 import { StarInfoPanel } from '../components/StarInfoPanel';
 import { JumpOverlay } from '../components/JumpOverlay';
-import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, renderFlight, stepFlight, getFlightHUD, yaw, pitch } from '../canvas/flightRenderer';
+import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, renderFlight, stepFlight, getFlightHUD, yaw, pitch, aimFlightAt } from '../canvas/flightRenderer';
 import { createStarmapState, resizeStarmap, renderStarmap, updateStarmap, findStarAtMouse, findLaneAtMouse, getStarmapHUD } from '../canvas/starmapRenderer';
 import { createJumpState, resetJump, renderJump, updateJump, isJumpComplete, getJumpProgress } from '../canvas/jumpRenderer';
 import { createSolarState, renderSolarSystem, applySolarGravity, getSolarHUD } from '../canvas/solarRenderer';
@@ -65,6 +65,8 @@ export function SimulatorPage() {
     setStars,
     speedMode,
     planetScale,
+    hypojumpTarget,
+    setHypojumpTarget,
   } = useAppState();
 
   const [lanes, setLanes] = useState<Lane[]>([]);
@@ -108,6 +110,35 @@ export function SimulatorPage() {
       }
     }
   }, [currentStar, stars.length]);
+
+  // Hypojump: reposition the camera to a standoff near a chosen Sol body.
+  // (In-system only — the star-to-star hyperjump is untouched.)
+  useEffect(() => {
+    if (!hypojumpTarget) return;
+    const fs = flightRef.current;
+    const name = hypojumpTarget;
+    setHypojumpTarget(null);
+    if (!fs.isSolar) return;
+    const AU = 100;
+    if (name === 'Sun') {
+      const rW = (696000 / 149597870.7) * AU;
+      const d = 9 * rW;
+      const m = Math.hypot(0.35, 0.25, 0.9);
+      aimFlightAt(fs, [(0.35 / m) * d, (0.25 / m) * d, (0.9 / m) * d], [0, 0, 0]);
+    } else {
+      const p = planetsRef.current.find((b) => b.name === name);
+      if (!p) return;
+      const target = [p.pos[0] * AU, p.pos[1] * AU, p.pos[2] * AU];
+      const rW = (p.R / 149597870.7) * AU;
+      const d = 9 * rW * planetScale;
+      const tl = Math.hypot(target[0], target[1], target[2]) || 1;
+      const ox = target[0] / tl, oy = target[1] / tl, oz = target[2] / tl;
+      // sit just sunward of the planet (so its lit face is toward us), slightly above the ecliptic
+      const eye = [target[0] - ox * d, target[1] - oy * d, target[2] - oz * d + d * 0.4];
+      aimFlightAt(fs, eye, target);
+    }
+    solarRef.current.sway = [0, 0, 0];
+  }, [hypojumpTarget, planetScale, setHypojumpTarget]);
 
   // Sync beta and paused to flight state
   useEffect(() => {

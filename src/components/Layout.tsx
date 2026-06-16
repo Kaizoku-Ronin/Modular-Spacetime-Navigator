@@ -36,6 +36,8 @@ interface AppContextType extends AppState {
   setSpeedMode: (mode: SpeedMode) => void;
   planetScale: number;
   setPlanetScale: (v: number) => void;
+  hypojumpTarget: string | null;
+  setHypojumpTarget: (name: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -57,6 +59,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [stars, setStars] = useState<Star[]>([]);
   const [speedMode, setSpeedMode] = useState<SpeedMode>('cruise');
   const [planetScale, setPlanetScale] = useState(10);
+  const [hypojumpTarget, setHypojumpTarget] = useState<string | null>(null);
 
   const triggerJump = useCallback((target: Star) => {
     setJumpTarget(target);
@@ -88,6 +91,8 @@ export function Layout({ children }: { children: ReactNode }) {
         setSpeedMode,
         planetScale,
         setPlanetScale,
+        hypojumpTarget,
+        setHypojumpTarget,
       }}
     >
       {children}
