@@ -16,13 +16,13 @@ import {
   sph,
 } from '../lib/math3d';
 import { dColor, CUSP_COLORS, cuspNameForWidth } from '../lib/colors';
+import { traversalSpeed, DEFAULT_TIME_COMPRESSION } from '../lib/physics';
 import type { Star } from '../data/starData';
 
 // ---- constants (EXACT from original) ----
 const AU = 100;
 const FIELD = AU;
 const BASE_RVIS = 1.6;
-const SPEED_SCALE = 42;
 const BASE_GM = 1400;
 const MAXTURN = 2.0;
 const LENSK = 2.6;
@@ -31,6 +31,7 @@ const RS = 0.58; // render scale
 // ---- state ----
 export interface FlightState {
   beta: number;
+  timeScale: number; // simulated seconds per real second (time compression)
   paused: boolean;
   coordT: number;
   properT: number;
@@ -77,6 +78,7 @@ export interface FlightState {
 export function createFlightState(): FlightState {
   return {
     beta: 0.2,
+    timeScale: DEFAULT_TIME_COMPRESSION,
     paused: true,
     coordT: 0,
     properT: 0,
@@ -272,7 +274,7 @@ export function stepFlight(s: FlightState, dt: number) {
   const R = len(s.cam);
   const gmag = s.GM_scale / Math.max(R * R, 1e-3);
   const g = [(-s.cam[0] / R) * gmag, (-s.cam[1] / R) * gmag, (-s.cam[2] / R) * gmag];
-  const sp = s.beta * SPEED_SCALE;
+  const sp = traversalSpeed(s.beta, s.timeScale);
   let V = [
     s.fwd[0] * sp + g[0] * dt,
     s.fwd[1] * sp + g[1] * dt,
@@ -302,9 +304,9 @@ export function stepFlight(s: FlightState, dt: number) {
     s.cam[1] + s.fwd[1] * sp * dt,
     s.cam[2] + s.fwd[2] * sp * dt,
   ];
-  s.coordT += dt;
+  s.coordT += dt * s.timeScale;
   const gamma = 1 / Math.sqrt(1 - s.beta * s.beta);
-  s.properT += dt / gamma;
+  s.properT += (dt * s.timeScale) / gamma;
 
   // horizon shield
   const R2 = len(s.cam);
@@ -606,6 +608,7 @@ export function getFlightHUD(s: FlightState) {
   return {
     distance: au.toFixed(2) + ' AU',
     velocity: s.beta.toFixed(2) + ' c',
+    compression: '\u00d7' + Math.round(s.timeScale),
     gamma: gamma.toFixed(2),
     properTime: s.properT.toFixed(1) + ' s',
     coordTime: s.coordT.toFixed(1) + ' s',
@@ -632,4 +635,16 @@ export function aimFlightAt(s: FlightState, eye: number[], target: number[]) {
   const d = norm([target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]]);
   if (len(d) > 0.5) s.fwd = d;
   rebuild(s);
+}
+
+// Re-level so "up" points toward ecliptic north (+z world) as closely as the
+// current look direction allows — keeps fwd, makes planetary axial tilts legible.
+export function levelToEclipticNorth(s: FlightState) {
+  const N = [0, 0, 1];
+  const d = dot(N, s.fwd);
+  const up = [N[0] - d * s.fwd[0], N[1] - d * s.fwd[1], N[2] - d * s.fwd[2]];
+  if (len(up) < 1e-3) return; // looking straight up/down the pole — leave as-is
+  s.up = norm(up);
+  s.right = norm(cross(s.fwd, s.up));
+  s.up = norm(cross(s.right, s.fwd));
 }

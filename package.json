@@ -1,7 +1,7 @@
 {
   "name": "Modular-Spacetime-Navigator",
   "private": true,
-  "version": "1.04.2",
+  "version": "1.05.2",
   "type": "module",
   "scripts": {
     "dev": "vite",

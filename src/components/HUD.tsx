@@ -10,6 +10,7 @@ interface HUDData {
   gamma: string;
   properTime: string;
   coordTime: string;
+  compression: string;
   status: 'near-horizon' | 'paused' | 'cruising';
 }
 
@@ -122,6 +123,14 @@ export function HUD({ hudData }: { hudData: HUDData }) {
           Velocity
         </span>
         <span style={{ color: '#46e0d2', fontVariantNumeric: 'tabular-nums' }}>{hudData.velocity}</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '18px', marginBottom: '3px' }}>
+        <span style={{ color: '#5f7e7d', textTransform: 'uppercase', fontSize: '9.5px', letterSpacing: '0.12em' }}>
+          Time comp
+        </span>
+        <span style={{ color: '#9fd0cb', fontVariantNumeric: 'tabular-nums' }} title="Simulated seconds per real second. Ship speed stays below light; this only fast-forwards the clock.">
+          {hudData.compression}
+        </span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '18px', marginBottom: '3px' }}>
         <span style={{ color: '#5f7e7d', textTransform: 'uppercase', fontSize: '9.5px', letterSpacing: '0.12em' }}>

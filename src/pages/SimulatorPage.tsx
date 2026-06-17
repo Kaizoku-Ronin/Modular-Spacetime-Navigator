@@ -12,7 +12,7 @@ import { ModeSwitchBar } from '../components/ModeSwitchBar';
 import { HUD } from '../components/HUD';
 import { StarInfoPanel } from '../components/StarInfoPanel';
 import { JumpOverlay } from '../components/JumpOverlay';
-import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, renderFlight, stepFlight, getFlightHUD, yaw, pitch, aimFlightAt } from '../canvas/flightRenderer';
+import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, renderFlight, stepFlight, getFlightHUD, yaw, pitch, aimFlightAt, levelToEclipticNorth } from '../canvas/flightRenderer';
 import { createStarmapState, resizeStarmap, renderStarmap, updateStarmap, findStarAtMouse, findLaneAtMouse, getStarmapHUD } from '../canvas/starmapRenderer';
 import { createJumpState, resetJump, renderJump, updateJump, isJumpComplete, getJumpProgress } from '../canvas/jumpRenderer';
 import { createSolarState, renderSolarSystem, applySolarGravity, getSolarHUD } from '../canvas/solarRenderer';
@@ -24,8 +24,16 @@ import type { Star, Lane } from '../data/starData';
 import { Chronometer } from '../components/Chronometer';
 import { FlightControls } from '../components/FlightControls';
 import { createClock, tickClock, resetClock, saveClock } from '../lib/clock';
+import { buildRonin } from '../lib/shipMesh';
+import { renderShip, shipCameraFromFlight, boostFromBeta } from '../canvas/shipRenderer';
 
 const RS = 0.58; // render scale (flight)
+
+const AU = 100; // world units per AU (matches flight/solar renderers)
+const SHIP_MESH = buildRonin(); // built once; ~4.6 wu long at scale 1
+const SHIP_SCALE = 1.0; // own-ship + peer size multiplier
+const CHASE_DIST = 15; // world units the chase cam sits behind the ship
+const CHASE_HEIGHT = 2.6; // world units the chase cam sits above the ship
 
 // Speed mode configuration
 const SPEED_RANGES: Record<SpeedMode, { min: number; max: number }> = {
@@ -65,9 +73,24 @@ export function SimulatorPage() {
     setStars,
     speedMode,
     planetScale,
+    timeScale,
     hypojumpTarget,
     setHypojumpTarget,
+    orientPending,
+    setOrientPending,
+    viewMode,
+    setViewMode,
+    shipHull,
+    shipAccent,
+    peers,
   } = useAppState();
+
+  // Mirror view/color/peer state into refs the render loop can read each frame
+  // (so peer/network updates don't tear down and re-create the rAF loop).
+  const viewModeRef = useRef(viewMode);
+  const shipHullRef = useRef(shipHull);
+  const shipAccentRef = useRef(shipAccent);
+  const peersRef = useRef(peers);
 
   const [lanes, setLanes] = useState<Lane[]>([]);
   const [hudData, setHudData] = useState(getFlightHUD(flightRef.current));
@@ -118,6 +141,7 @@ export function SimulatorPage() {
     const fs = flightRef.current;
     const name = hypojumpTarget;
     setHypojumpTarget(null);
+    solarRef.current.focusBody = name;
     if (!fs.isSolar) return;
     const AU = 100;
     if (name === 'Sun') {
@@ -140,6 +164,13 @@ export function SimulatorPage() {
     solarRef.current.sway = [0, 0, 0];
   }, [hypojumpTarget, planetScale, setHypojumpTarget]);
 
+  // Orientation: snap "up" to ecliptic north so axial tilts read true.
+  useEffect(() => {
+    if (!orientPending) return;
+    levelToEclipticNorth(flightRef.current);
+    setOrientPending(false);
+  }, [orientPending, setOrientPending]);
+
   // Sync beta and paused to flight state
   useEffect(() => {
     flightRef.current.beta = beta;
@@ -148,6 +179,15 @@ export function SimulatorPage() {
   useEffect(() => {
     flightRef.current.paused = isPaused;
   }, [isPaused]);
+
+  useEffect(() => {
+    flightRef.current.timeScale = timeScale;
+  }, [timeScale]);
+
+  useEffect(() => { viewModeRef.current = viewMode; }, [viewMode]);
+  useEffect(() => { shipHullRef.current = shipHull; }, [shipHull]);
+  useEffect(() => { shipAccentRef.current = shipAccent; }, [shipAccent]);
+  useEffect(() => { peersRef.current = peers; }, [peers]);
 
   // Canvas sizing
   const resize = useCallback(() => {
@@ -188,7 +228,7 @@ export function SimulatorPage() {
         const flying = appMode === 'flight';
         const frozen = flying && flightRef.current.paused;
         if (!frozen) {
-          tickClock(clockRef.current, dt, flying ? flightRef.current.beta : 0, !flying);
+          tickClock(clockRef.current, dt * (flying ? flightRef.current.timeScale : 1), flying ? flightRef.current.beta : 0, !flying);
         }
         const g = flying ? 1 / Math.sqrt(1 - flightRef.current.beta * flightRef.current.beta) : 1;
         setChrono({ universe: clockRef.current.universe, ship: clockRef.current.ship, gamma: g, flying: flying && !frozen });
@@ -218,7 +258,21 @@ export function SimulatorPage() {
             }
           }
 
-          // Render: use solar HUD when in Sol, regular HUD otherwise
+          // Third-person chase cam: pull the render camera back + up from the
+          // ship point, remembering the true ship position so we can draw the
+          // hull ahead of it. The chase cam rides the ship's velocity, so the
+          // existing aberration/Doppler (keyed on fs.fwd/fs.beta) stay correct.
+          const thirdPerson = viewModeRef.current === 'third';
+          const shipPos = fs.cam;
+          if (thirdPerson) {
+            fs.cam = [
+              shipPos[0] - fs.fwd[0] * CHASE_DIST + fs.up[0] * CHASE_HEIGHT,
+              shipPos[1] - fs.fwd[1] * CHASE_DIST + fs.up[1] * CHASE_HEIGHT,
+              shipPos[2] - fs.fwd[2] * CHASE_DIST + fs.up[2] * CHASE_HEIGHT,
+            ];
+          }
+
+          // Scene (draws from fs.cam — now the chase cam in third-person)
           if (fs.isSolar) {
             renderFlight(ctx!, fs, (ctx2, s) => {
               renderSolarSystem(ctx2, s, solarRef.current, planetScale, dt);
@@ -228,6 +282,44 @@ export function SimulatorPage() {
             renderFlight(ctx!, fs);
             setHudData(getFlightHUD(fs));
           }
+
+          // Ships share the scene's projection (same FOC / CX / CY / basis).
+          const shipCam = shipCameraFromFlight(fs);
+
+          // Own ship — only in third-person (you're inside it otherwise).
+          // It is co-moving with the camera, so there is ZERO relative
+          // aberration/Doppler: render with beta 0 (a moving observer does not
+          // see their own hull warp). Only the engine glow tracks real speed.
+          if (thirdPerson) {
+            renderShip(ctx!, SHIP_MESH, {
+              posAU: [shipPos[0] / AU, shipPos[1] / AU, shipPos[2] / AU],
+              fwd: fs.fwd,
+              up: fs.up,
+              scale: SHIP_SCALE,
+              hull: shipHullRef.current,
+              accent: shipAccentRef.current,
+              boost: boostFromBeta(fs.beta),
+            }, { ...shipCam, beta: 0, gamma: 1 });
+          }
+
+          // Remote peers — drawn in both views. Each has its OWN velocity, so
+          // the observer's boost aberrates them like the rest of the world
+          // (rest-frame in, observer optics applied here); glow from peer beta.
+          const peerList = peersRef.current;
+          for (let i = 0; i < peerList.length; i++) {
+            const p = peerList[i];
+            renderShip(ctx!, SHIP_MESH, {
+              posAU: p.posAU,
+              fwd: p.fwd,
+              up: p.up,
+              scale: SHIP_SCALE,
+              hull: p.hull,
+              accent: p.accent,
+              boost: boostFromBeta(p.beta),
+            }, shipCam);
+          }
+
+          if (thirdPerson) fs.cam = shipPos; // restore the true ship position
           break;
         }
         case 'starmap': {
@@ -282,6 +374,8 @@ export function SimulatorPage() {
         setPaused(!isPaused);
       } else if (k === 'r' && appMode === 'flight') {
         resetFlight(flightRef.current);
+      } else if (k === 'v' && appMode === 'flight') {
+        setViewMode(viewMode === 'third' ? 'first' : 'third');
       } else if ((k === 'a' || k === 'arrowleft') && appMode === 'flight') {
         yaw(flightRef.current, 0.05);
       } else if ((k === 'd' || k === 'arrowright') && appMode === 'flight') {
@@ -325,7 +419,7 @@ export function SimulatorPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [appMode, selectedStar, beta, isPaused, setAppMode, setPaused, setBeta, setSelectedStar, setShowStarPanel, setJumpTarget, speedMode]);
+  }, [appMode, selectedStar, beta, isPaused, setAppMode, setPaused, setBeta, setSelectedStar, setShowStarPanel, setJumpTarget, speedMode, viewMode, setViewMode]);
 
   // Mouse/touch handlers for starmap
   const dragRef = useRef(false);

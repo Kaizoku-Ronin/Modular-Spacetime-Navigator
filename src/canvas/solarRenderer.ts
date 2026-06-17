@@ -4,11 +4,12 @@
 // Integrates into the flight renderer pipeline.
 // ============================================================
 
-import { dot, len } from '../lib/math3d';
+import { dot, len, norm } from '../lib/math3d';
 import { tempToRGB } from '../data/solarSystem';
 import type { FlightState } from './flightRenderer';
 import { aberrateLocal } from './flightRenderer';
 import type { Planet } from '../data/solarSystem';
+import { traversalSpeed } from '../lib/physics';
 
 const AU = 100; // world units per AU (matches flightRenderer)
 
@@ -18,6 +19,7 @@ export interface SolarState {
   initialized: boolean;
   lastSunScreen: { x: number; y: number } | null;
   sway: number[];
+  focusBody?: string | null; // last hypojumped body, for the compass
 }
 
 export function createSolarState(): SolarState {
@@ -26,6 +28,7 @@ export function createSolarState(): SolarState {
     initialized: false,
     lastSunScreen: null,
     sway: [0, 0, 0],
+    focusBody: null,
   };
 }
 
@@ -228,7 +231,7 @@ function drawDebrisStreaks(
   s: FlightState,
   dt: number
 ) {
-  const speed = s.beta * 42; // world units/sec at beta=1
+  const speed = traversalSpeed(s.beta, s.timeScale); // world units/sec (= beta*c*compression)
   const streakT = 0.05;
   const streak = Math.min(DEBRIS_L * 0.5, Math.abs(speed) * streakT);
   const sgn = Math.sign(speed) || 1;
@@ -338,6 +341,126 @@ export function applySolarGravity(s: FlightState, solar: SolarState, dt: number,
 }
 
 // ---- MAIN RENDER ----
+// ---- planet spin axis (pole line through the sphere) ----
+function drawPlanetAxis(
+  ctx: CanvasRenderingContext2D,
+  s: FlightState,
+  eye: number[],
+  planet: Planet,
+  planetScale: number
+) {
+  const n = planet.pole;
+  if (!n) return;
+  const worldR = (planet.R / 149597870.7) * AU * planetScale;
+  const half = worldR * 2.4;
+  const c = [planet.pos[0] * AU, planet.pos[1] * AU, planet.pos[2] * AU];
+  const a = [c[0] + n[0] * half, c[1] + n[1] * half, c[2] + n[2] * half]; // north end
+  const b = [c[0] - n[0] * half, c[1] - n[1] * half, c[2] - n[2] * half]; // south end
+  const pa = projectWorld(a, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd, s.beta);
+  const pb = projectWorld(b, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd, s.beta);
+  if (!pa || !pb) return;
+  ctx.strokeStyle = 'rgba(130,205,240,0.6)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(pa.x, pa.y);
+  ctx.lineTo(pb.x, pb.y);
+  ctx.stroke();
+  // mark the north pole end
+  ctx.fillStyle = 'rgba(165,225,255,0.95)';
+  ctx.beginPath();
+  ctx.arc(pa.x, pa.y, 2.2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// ---- navigation compass: ecliptic-axis gizmo + pointers to Sol / focus body ----
+function drawCompass(
+  ctx: CanvasRenderingContext2D,
+  s: FlightState,
+  eye: number[],
+  solar: SolarState
+) {
+  ctx.save();
+  ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // (a) ecliptic-axis orientation gizmo (bottom-left)
+  const gx = 84, gy = s.H - 84, gr = 26;
+  const axes = [
+    { v: [0, 0, 1], label: 'N', col: '#46e0d2' }, // ecliptic north
+    { v: [1, 0, 0], label: 'X', col: '#7f93a6' }, // vernal equinox
+    { v: [0, 1, 0], label: 'Y', col: '#7f93a6' },
+  ];
+  ctx.strokeStyle = 'rgba(120,150,170,0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(gx, gy, gr + 7, 0, Math.PI * 2);
+  ctx.stroke();
+  for (const ax of axes) {
+    const cx = dot(ax.v, s.right), cy = dot(ax.v, s.up), cz = dot(ax.v, s.fwd);
+    ctx.globalAlpha = cz >= -0.05 ? 1 : 0.35;
+    ctx.strokeStyle = ax.col;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(gx + cx * gr, gy - cy * gr);
+    ctx.stroke();
+    ctx.fillStyle = ax.col;
+    ctx.fillText(ax.label, gx + cx * (gr + 9), gy - cy * (gr + 9));
+  }
+  ctx.globalAlpha = 1;
+
+  // (b) pointers to Sol (origin) and the focus body
+  const targets = [{ pos: [0, 0, 0], label: 'SOL', col: '#ffcf6e' }];
+  if (solar.focusBody && solar.focusBody !== 'Sun' && solar.focusBody !== 'Sol') {
+    const fb = solar.planets.find((p) => p.name === solar.focusBody);
+    if (fb) targets.push({ pos: [fb.pos[0] * AU, fb.pos[1] * AU, fb.pos[2] * AU], label: fb.name.toUpperCase(), col: '#9fd0cb' });
+  }
+  for (const t of targets) {
+    const rel = [t.pos[0] - eye[0], t.pos[1] - eye[1], t.pos[2] - eye[2]];
+    const distAU = len(rel) / AU;
+    let dir = norm(rel);
+    if (s.beta > 1e-4) dir = aberrateLocal(dir, s.fwd, s.beta);
+    const tx = dot(dir, s.right), ty = dot(dir, s.up), tz = dot(dir, s.fwd);
+    const px = s.CX + (s.FOC * tx) / Math.max(tz, 1e-3);
+    const py = s.CY - (s.FOC * ty) / Math.max(tz, 1e-3);
+    const inFront = tz > 0.05;
+    const inView = inFront && px > 30 && px < s.W - 30 && py > 30 && py < s.H - 30;
+    const dl = `${t.label} ${distAU < 10 ? distAU.toFixed(2) : distAU.toFixed(0)} AU`;
+    if (inView) {
+      ctx.globalAlpha = 0.85;
+      ctx.strokeStyle = t.col;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(px, py, 9, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = t.col;
+      ctx.fillText(dl, px, py - 17);
+    } else {
+      const ang = inFront ? Math.atan2(py - s.CY, px - s.CX) : Math.atan2(-ty, tx);
+      const R = Math.min(s.W, s.H) * 0.4;
+      const ex = s.CX + Math.cos(ang) * R, ey = s.CY + Math.sin(ang) * R;
+      ctx.save();
+      ctx.translate(ex, ey);
+      ctx.rotate(ang);
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = t.col;
+      ctx.beginPath();
+      ctx.moveTo(11, 0);
+      ctx.lineTo(-7, 6);
+      ctx.lineTo(-7, -6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = t.col;
+      ctx.fillText(dl, s.CX + Math.cos(ang) * (R - 20), s.CY + Math.sin(ang) * (R - 20));
+    }
+  }
+  ctx.restore();
+}
+
 export function renderSolarSystem(
   ctx: CanvasRenderingContext2D,
   s: FlightState,
@@ -395,12 +518,20 @@ export function renderSolarSystem(
     if (d.rad > 1.6) {
       drawLabel(ctx, d.planet.name, d.sx, d.sy - d.rad - 7, '#bcd3d2', false);
     }
+
+    // Spin axis (pole line) once the planet reads as a disc
+    if (d.rad > 4 && d.planet.pole) {
+      drawPlanetAxis(ctx, s, eye, d.planet, planetScale);
+    }
   }
 
   // 5. Debris streaks (for speed sense, adapted from HTML demo)
   if (s.beta > 0.001) {
     drawDebrisStreaks(ctx, s, dt);
   }
+
+  // 6. Navigation compass: ecliptic-axis gizmo + pointers to Sol / focus body
+  drawCompass(ctx, s, eye, solar);
 }
 
 // ---- HUD data for solar system ----
@@ -410,6 +541,7 @@ export function getSolarHUD(s: FlightState, _solar: SolarState): {
   gamma: string;
   properTime: string;
   coordTime: string;
+  compression: string;
   status: 'near-horizon' | 'paused' | 'cruising';
 } {
   const R = len(s.cam);
@@ -423,6 +555,7 @@ export function getSolarHUD(s: FlightState, _solar: SolarState): {
   return {
     distance: au.toFixed(3) + ' AU',
     velocity: s.beta.toFixed(3) + ' c',
+    compression: '\u00d7' + Math.round(s.timeScale),
     gamma: gamma.toFixed(3),
     properTime: s.properT.toFixed(1) + ' s',
     coordTime: s.coordT.toFixed(1) + ' s',
