@@ -196,6 +196,19 @@ export function buildSolarSystem(date?: Date): Planet[] {
   return planets;
 }
 
+// ---- Live re-propagation: advance body positions to a new Julian Date ----
+// Cheap (Kepler solve per body); call each frame with a clock-driven JD so the
+// planets actually orbit. Orbit *paths* are left untouched (they barely move).
+export function updateSolarPositions(planets: Planet[], JD: number): void {
+  for (const p of planets) {
+    const np = heliocentricPos(p, JD);
+    p.pos[0] = np[0];
+    p.pos[1] = np[1];
+    p.pos[2] = np[2];
+    p.sunDist = Math.hypot(np[0], np[1], np[2]);
+  }
+}
+
 // ---- Temperature → RGB (for sun glow) ----
 export function tempToRGB(t: number): [number, number, number] {
   t /= 100;

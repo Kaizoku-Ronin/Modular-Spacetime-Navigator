@@ -17,7 +17,7 @@ import { createStarmapState, resizeStarmap, renderStarmap, updateStarmap, findSt
 import { createJumpState, resetJump, renderJump, updateJump, isJumpComplete, getJumpProgress } from '../canvas/jumpRenderer';
 import { createSolarState, renderSolarSystem, applySolarGravity, getSolarHUD } from '../canvas/solarRenderer';
 import type { SolarState } from '../canvas/solarRenderer';
-import { buildSolarSystem } from '../data/solarSystem';
+import { buildSolarSystem, julianDate, updateSolarPositions } from '../data/solarSystem';
 import type { Planet } from '../data/solarSystem';
 import { loadStars, loadLanes } from '../data/starData';
 import type { Star, Lane } from '../data/starData';
@@ -124,10 +124,13 @@ export function SimulatorPage() {
       flightRef.current.isSolar = isSol;
 
       if (isSol) {
-        // Build real solar system
-        const planets = buildSolarSystem();
+        // Build real solar system at the current instant; remember the epoch so
+        // positions can advance live from the flight clock.
+        const now = new Date();
+        const planets = buildSolarSystem(now);
         planetsRef.current = planets;
         solarRef.current.planets = planets;
+        solarRef.current.epochJD = julianDate(now);
         solarRef.current.initialized = true;
       } else {
         solarRef.current.initialized = false;
@@ -274,6 +277,12 @@ export function SimulatorPage() {
             // Apply solar gravity sway when in Sol system
             if (fs.isSolar && planetsRef.current.length > 0) {
               applySolarGravity(fs, solarRef.current, dt, planetsRef.current);
+            }
+
+            // Live ephemeris: advance positions by the compressed time elapsed
+            // since entering Sol (coordT), so the planets actually orbit.
+            if (fs.isSolar && solarRef.current.epochJD != null && planetsRef.current.length > 0) {
+              updateSolarPositions(planetsRef.current, solarRef.current.epochJD + fs.coordT / 86400);
             }
           }
 

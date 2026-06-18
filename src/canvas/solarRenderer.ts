@@ -4,7 +4,7 @@
 // Integrates into the flight renderer pipeline.
 // ============================================================
 
-import { dot, len, norm } from '../lib/math3d';
+import { dot, len, norm, cross } from '../lib/math3d';
 import { tempToRGB } from '../data/solarSystem';
 import type { FlightState } from './flightRenderer';
 import { aberrateLocal } from './flightRenderer';
@@ -20,6 +20,7 @@ export interface SolarState {
   lastSunScreen: { x: number; y: number } | null;
   sway: number[];
   focusBody?: string | null; // last hypojumped body, for the compass
+  epochJD?: number; // Julian Date captured on Sol entry; live positions advance from here
 }
 
 export function createSolarState(): SolarState {
@@ -29,6 +30,7 @@ export function createSolarState(): SolarState {
     lastSunScreen: null,
     sway: [0, 0, 0],
     focusBody: null,
+    epochJD: undefined,
   };
 }
 
@@ -111,36 +113,149 @@ function drawSun(
   ctx.fill();
 }
 
-// ---- planet shading (sun-direction) ----
-function shadePlanet(
+// ---- 3D planet sphere: software-rasterized, sun-lit, procedurally surfaced ----
+// Rendered into a small offscreen buffer (cost bounded by SPHERE_CAP) then blitted
+// scaled, so it keeps the chunky look and the same huge-up-close/small-far law as
+// the old disc. Lighting uses the true Sun-at-origin direction, so the terminator
+// and phases (e.g. crescent Venus) come out physically correct.
+const SPHERE_CAP = 84;
+let _sphCanvas: HTMLCanvasElement | null = null;
+let _sphCtx: CanvasRenderingContext2D | null = null;
+
+// sidereal rotation periods (hours); drives visible spin of surface features
+const ROT_HRS: Record<string, number> = {
+  Mercury: 1407.5, Venus: 5832.5, Earth: 23.93, Mars: 24.62,
+  Jupiter: 9.93, Saturn: 10.66, Uranus: 17.24, Neptune: 16.11,
+  Ceres: 9.07, Pluto: 153.3, Haumea: 3.92, Makemake: 22.5, Eris: 25.9, Sedna: 10.3,
+};
+
+function hexRGB(h: string): [number, number, number] {
+  const n = h.replace('#', '');
+  return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
+}
+
+// cheap layered-sine pseudo-noise in ~[-1,1]
+function snoise(a: number, b: number): number {
+  return Math.sin(a * 1.7 + b * 0.9) * 0.5
+       + Math.sin(a * 3.3 - b * 2.1 + 1.7) * 0.3
+       + Math.sin(a * 6.1 + b * 4.7 + 4.2) * 0.2;
+}
+
+// per-body surface albedo (0..1 rgb) at a latitude/longitude in radians
+function surfaceAlbedo(
+  name: string, kind: string, base: [number, number, number], lat: number, lon: number
+): [number, number, number] {
+  let r = base[0] / 255, g = base[1] / 255, b = base[2] / 255;
+  const alat = Math.abs(lat);
+  let f = 1;
+  switch (name) {
+    case 'Jupiter': {
+      f = 0.82 + 0.30 * Math.sin(lat * 7.0) * Math.cos(lat * 2.0) + 0.05 * snoise(lat * 9, lon * 2);
+      const dl = ((lon + 2.0) % (2 * Math.PI)) - Math.PI;
+      const spot = Math.exp(-(((lat + 0.38) * 6) ** 2) - ((dl * 1.6) ** 2));
+      r += spot * 0.35; g -= spot * 0.12; b -= spot * 0.18;
+      break;
+    }
+    case 'Saturn': f = 0.86 + 0.20 * Math.sin(lat * 6.0) + 0.04 * snoise(lat * 7, lon); break;
+    case 'Uranus': f = 0.94 + 0.06 * Math.sin(lat * 4.0); break;
+    case 'Neptune': f = 0.90 + 0.10 * Math.sin(lat * 5.0) + 0.05 * snoise(lat * 5, lon * 1.5); break;
+    case 'Mars':
+      f = 0.9 + 0.18 * snoise(lat * 4 + 1, lon * 4);
+      if (alat > 1.16) { r = 0.92; g = 0.92; b = 0.95; f = 1; }
+      break;
+    case 'Earth': {
+      const land = snoise(lat * 3.1, lon * 3.3) + 0.35 * snoise(lat * 7, lon * 6);
+      if (alat > 1.30) { r = 0.90; g = 0.93; b = 0.97; }
+      else if (land > 0.18) { r = 0.20; g = 0.42; b = 0.18; }
+      else { r = 0.12; g = 0.28; b = 0.55; }
+      f = 1 + 0.08 * snoise(lat * 11, lon * 9);
+      break;
+    }
+    case 'Venus': f = 0.95 + 0.07 * snoise(lat * 3, lon * 3); break;
+    case 'Mercury': f = 0.85 + 0.22 * snoise(lat * 6, lon * 6); break;
+    default: f = 0.9 + 0.16 * snoise(lat * 5, lon * 5 + (kind === 'dwarf' ? 2 : 0));
+  }
+  return [Math.max(0, r * f), Math.max(0, g * f), Math.max(0, b * f)];
+}
+
+function drawPlanetSphere(
   ctx: CanvasRenderingContext2D,
-  sx: number, sy: number, rad: number,
-  col: string,
-  sunX: number, sunY: number
+  s: FlightState,
+  planet: Planet,
+  sx: number, sy: number, rad: number
 ) {
-  if (rad <= 2.2) {
-    // Too small for shading, just draw a dot
-    ctx.fillStyle = col;
+  if (rad <= 2.4) {
+    const [r, g, b] = hexRGB(planet.col);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
     ctx.beginPath();
     ctx.arc(sx, sy, Math.max(1, rad), 0, Math.PI * 2);
     ctx.fill();
     return;
   }
 
-  const sdx = sunX - sx;
-  const sdy = sunY - sy;
-  const m = Math.hypot(sdx, sdy) || 1;
-  const ox = (sdx / m) * rad * 0.55;
-  const oy = (sdy / m) * rad * 0.55;
+  const B = Math.max(10, Math.min(SPHERE_CAP, Math.round(rad * 2)));
+  if (!_sphCanvas) {
+    _sphCanvas = document.createElement('canvas');
+    _sphCanvas.width = SPHERE_CAP; _sphCanvas.height = SPHERE_CAP;
+    _sphCtx = _sphCanvas.getContext('2d');
+  }
+  if (!_sphCtx) return;
+  const img = _sphCtx.createImageData(B, B);
+  const data = img.data;
+  const rB = B / 2;
 
-  const g = ctx.createRadialGradient(sx + ox, sy + oy, rad * 0.1, sx, sy, rad);
-  g.addColorStop(0, col);
-  g.addColorStop(0.65, col);
-  g.addColorStop(1, '#05070b');
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(sx, sy, rad, 0, Math.PI * 2);
-  ctx.fill();
+  const rx = s.right, upv = s.up, fz = s.fwd;
+  // light direction: from the planet toward the Sun at the origin (world frame)
+  const P = [planet.pos[0] * AU, planet.pos[1] * AU, planet.pos[2] * AU];
+  const Pl = Math.hypot(P[0], P[1], P[2]) || 1;
+  const Lw = [-P[0] / Pl, -P[1] / Pl, -P[2] / Pl];
+
+  // spin frame: pole + two equatorial axes; longitude advances with the clock
+  const pole = planet.pole && planet.pole.length === 3 ? planet.pole : [0, 0, 1];
+  let e1 = cross(pole, [0, 0, 1]);
+  if (len(e1) < 1e-3) e1 = cross(pole, [0, 1, 0]);
+  e1 = norm(e1);
+  const e2 = norm(cross(pole, e1));
+  const spinH = ROT_HRS[planet.name] ?? 24;
+  const spin = (s.coordT / 3600 / spinH) * 2 * Math.PI;
+
+  const base = hexRGB(planet.col);
+  const ambient = 0.07;
+
+  for (let j = 0; j < B; j++) {
+    const vy = (j + 0.5 - rB) / rB;
+    for (let i = 0; i < B; i++) {
+      const vx = (i + 0.5 - rB) / rB;
+      const d2 = vx * vx + vy * vy;
+      const o = (j * B + i) * 4;
+      if (d2 > 1) { data[o + 3] = 0; continue; }
+      const vz = Math.sqrt(1 - d2); // toward camera
+      // world-space surface normal (screen up = -vy, toward-camera = -fwd)
+      const nwx = rx[0] * vx + upv[0] * (-vy) + (-fz[0]) * vz;
+      const nwy = rx[1] * vx + upv[1] * (-vy) + (-fz[1]) * vz;
+      const nwz = rx[2] * vx + upv[2] * (-vy) + (-fz[2]) * vz;
+      const lam = Math.max(0, nwx * Lw[0] + nwy * Lw[1] + nwz * Lw[2]);
+      const shade = ambient + (1 - ambient) * lam;
+      const sinLat = Math.max(-1, Math.min(1, nwx * pole[0] + nwy * pole[1] + nwz * pole[2]));
+      const lat = Math.asin(sinLat);
+      const lon = Math.atan2(
+        nwx * e2[0] + nwy * e2[1] + nwz * e2[2],
+        nwx * e1[0] + nwy * e1[1] + nwz * e1[2],
+      ) + spin;
+      const alb = surfaceAlbedo(planet.name, planet.kind, base, lat, lon);
+      const limb = 0.55 + 0.45 * vz; // gentle limb darkening
+      data[o]     = Math.min(255, alb[0] * 255 * shade * limb);
+      data[o + 1] = Math.min(255, alb[1] * 255 * shade * limb);
+      data[o + 2] = Math.min(255, alb[2] * 255 * shade * limb);
+      data[o + 3] = 255;
+    }
+  }
+
+  _sphCtx.putImageData(img, 0, 0);
+  const prevSmooth = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(_sphCanvas, 0, 0, B, B, sx - rad, sy - rad, rad * 2, rad * 2);
+  ctx.imageSmoothingEnabled = prevSmooth;
 }
 
 // ---- orbit lines ----
@@ -502,12 +617,9 @@ export function renderSolarSystem(
   // Sort back to front (farther z first = drawn first)
   draws.sort((a, b) => b.z - a.z);
 
-  // 4. Draw planets
-  const sunX = solar.lastSunScreen?.x ?? s.CX;
-  const sunY = solar.lastSunScreen?.y ?? s.CY;
-
+  // 4. Draw planets as sun-lit 3D spheres
   for (const d of draws) {
-    shadePlanet(ctx, d.sx, d.sy, d.rad, d.planet.col, sunX, sunY);
+    drawPlanetSphere(ctx, s, d.planet, d.sx, d.sy, d.rad);
 
     // Rings
     if (d.planet.ring && d.rad > 3) {
