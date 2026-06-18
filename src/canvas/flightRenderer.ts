@@ -25,6 +25,9 @@ const FIELD = AU;
 const BASE_RVIS = 1.6;
 const BASE_GM = 1400;
 const MAXTURN = 2.0;
+// Gravity may consume at most this fraction of the per-frame turn budget, so the
+// pilot always keeps the remainder to steer away. Prevents low-speed capture.
+const GRAV_TURN_FRAC = 0.5;
 const LENSK = 2.6;
 const RS = 0.58; // render scale
 
@@ -212,6 +215,24 @@ export function resetFlight(s: FlightState) {
   rebuild(s);
 }
 
+// Place the ship at a safe standoff when ENTERING a system, facing tangentially
+// (not into the central mass) so it can never spawn already captured or inside
+// the horizon shield carrying coordinates from the previous system. Distance
+// scales with the system's visual core radius. Speed is left to the UI.
+export function spawnStandoff(s: FlightState) {
+  const D = s.isSolar ? 220 : Math.max(s.RVIS * 14, 80); // world units out
+  const dir = norm([0.42, 0.3, 0.85]);                   // above + to one side
+  s.cam = [dir[0] * D, dir[1] * D, dir[2] * D];
+  // tangential heading: perpendicular to the radial line toward the centre
+  const rhat = norm(s.cam);
+  let t = cross(rhat, [0, 0, 1]);
+  if (len(t) < 1e-3) t = cross(rhat, [0, 1, 0]);
+  s.fwd = norm(t);
+  s.coordT = 0;
+  s.properT = 0;
+  rebuild(s);
+}
+
 function rebuild(s: FlightState) {
   let ref = Math.abs(s.fwd[1]) > 0.95 ? [0, 0, 1] : [0, 1, 0];
   s.right = norm(cross(s.fwd, ref));
@@ -269,20 +290,45 @@ function projectLocal(
   return [CX + (FOC * xc) / zc, CY - (FOC * yc) / zc, zc];
 }
 
-// ---- physics step (EXACT) ----
+// ---- physics step ----
+// Gravity bends the HEADING (your throttle owns the speed). Two refinements turn
+// the old raw central-force injection into something that behaves like an
+// ORBITING body instead of a falling one:
+//
+//   1. Orbital relief. The true law curves the heading at rate g/sp, which blows
+//      up as the cruise speed sp -> 0 and pins a slow ship into the star. We
+//      scale gravity by min(1, sp/v_circ): at or above circular-orbit speed the
+//      true law is restored (circular orbits close exactly, faster-than-circular
+//      passes slingshot out); below it, the inward turn is clamped to the gentle
+//      *orbital* rate g/v_circ, independent of how slowly you crawl. So building
+//      tangential speed toward v_circ smoothly trades capture for a real orbit —
+//      moving vs static, exactly as intended.
+//
+//   2. Authority cap. Gravity may rotate the heading by at most
+//      GRAV_TURN_FRAC * MAXTURN per second, guaranteeing the pilot can always
+//      out-steer it (matters most near a massive horizon).
 export function stepFlight(s: FlightState, dt: number) {
-  const R = len(s.cam);
-  const gmag = s.GM_scale / Math.max(R * R, 1e-3);
-  const g = [(-s.cam[0] / R) * gmag, (-s.cam[1] / R) * gmag, (-s.cam[2] / R) * gmag];
+  const R = Math.max(len(s.cam), 1e-3);
   const sp = traversalSpeed(s.beta, s.timeScale);
-  let V = [
+
+  const gIn = s.GM_scale / (R * R);              // inward gravity (accel mag)
+  const vCirc = Math.sqrt(s.GM_scale / R);       // circular-orbit speed at R
+  const relief = Math.min(1, sp / Math.max(vCirc, 1e-6));
+  const gScaled = gIn * relief;
+  const g = [
+    (-s.cam[0] / R) * gScaled,
+    (-s.cam[1] / R) * gScaled,
+    (-s.cam[2] / R) * gScaled,
+  ];
+
+  const V = [
     s.fwd[0] * sp + g[0] * dt,
     s.fwd[1] * sp + g[1] * dt,
     s.fwd[2] * sp + g[2] * dt,
   ];
   const nh = norm(V);
   const ang = Math.acos(clamp(dot(nh, s.fwd), -1, 1));
-  const mx = MAXTURN * dt;
+  const mx = GRAV_TURN_FRAC * MAXTURN * dt;      // gravity's capped share
   const oldFwd = [s.fwd[0], s.fwd[1], s.fwd[2]];
   if (ang > mx && ang > 1e-6) {
     s.fwd = norm(rot(s.fwd, norm(cross(s.fwd, nh)), mx));

@@ -12,7 +12,7 @@ import { ModeSwitchBar } from '../components/ModeSwitchBar';
 import { HUD } from '../components/HUD';
 import { StarInfoPanel } from '../components/StarInfoPanel';
 import { JumpOverlay } from '../components/JumpOverlay';
-import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, renderFlight, stepFlight, getFlightHUD, yaw, pitch, aimFlightAt, levelToEclipticNorth } from '../canvas/flightRenderer';
+import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, spawnStandoff, renderFlight, stepFlight, getFlightHUD, yaw, pitch, aimFlightAt, levelToEclipticNorth } from '../canvas/flightRenderer';
 import { createStarmapState, resizeStarmap, renderStarmap, updateStarmap, findStarAtMouse, findLaneAtMouse, getStarmapHUD } from '../canvas/starmapRenderer';
 import { createJumpState, resetJump, renderJump, updateJump, isJumpComplete, getJumpProgress } from '../canvas/jumpRenderer';
 import { createSolarState, renderSolarSystem, applySolarGravity, getSolarHUD } from '../canvas/solarRenderer';
@@ -31,9 +31,11 @@ const RS = 0.58; // render scale (flight)
 
 const AU = 100; // world units per AU (matches flight/solar renderers)
 const SHIP_MESH = buildRonin(); // built once; ~4.6 wu long at scale 1
-const SHIP_SCALE = 1.0; // own-ship + peer size multiplier
+const SHIP_SCALE = 1.0; // own-ship + peer size multiplier (BH systems)
 const CHASE_DIST = 15; // world units the chase cam sits behind the ship
 const CHASE_HEIGHT = 2.6; // world units the chase cam sits above the ship
+const PLUTO_DIAM_KM = 2 * 1188; // Pluto diameter — target ship length in Sol
+const SHIP_MESH_LEN = 4.6; // mesh long-axis length (wu) at scale 1
 
 // Speed mode configuration
 const SPEED_RANGES: Record<SpeedMode, { min: number; max: number }> = {
@@ -131,6 +133,11 @@ export function SimulatorPage() {
         solarRef.current.initialized = false;
         planetsRef.current = [];
       }
+
+      // Always (re)spawn at a safe standoff for the entered system so we never
+      // arrive carrying the previous system's coordinates (which could land us
+      // inside the new horizon shield / gravity well).
+      spawnStandoff(flightRef.current);
     }
   }, [currentStar, stars.length]);
 
@@ -258,6 +265,22 @@ export function SimulatorPage() {
             }
           }
 
+          // Ship/chase scale. In Sol the ship rides the same planetScale
+          // exaggeration as the planets, sized to Pluto's diameter, so it always
+          // reads Pluto-relative to them. Chase distance scales with it, so the
+          // on-screen ship size stays constant while the size *ratio* to planets
+          // is physically true. BH systems keep the arcade scale.
+          let shipScale = SHIP_SCALE;
+          let chaseDist = CHASE_DIST;
+          let chaseHeight = CHASE_HEIGHT;
+          if (fs.isSolar) {
+            const plutoWU = (PLUTO_DIAM_KM / 149597870.7) * AU * planetScale;
+            shipScale = plutoWU / SHIP_MESH_LEN;
+            const framing = shipScale / SHIP_SCALE;
+            chaseDist = CHASE_DIST * framing;
+            chaseHeight = CHASE_HEIGHT * framing;
+          }
+
           // Third-person chase cam: pull the render camera back + up from the
           // ship point, remembering the true ship position so we can draw the
           // hull ahead of it. The chase cam rides the ship's velocity, so the
@@ -266,9 +289,9 @@ export function SimulatorPage() {
           const shipPos = fs.cam;
           if (thirdPerson) {
             fs.cam = [
-              shipPos[0] - fs.fwd[0] * CHASE_DIST + fs.up[0] * CHASE_HEIGHT,
-              shipPos[1] - fs.fwd[1] * CHASE_DIST + fs.up[1] * CHASE_HEIGHT,
-              shipPos[2] - fs.fwd[2] * CHASE_DIST + fs.up[2] * CHASE_HEIGHT,
+              shipPos[0] - fs.fwd[0] * chaseDist + fs.up[0] * chaseHeight,
+              shipPos[1] - fs.fwd[1] * chaseDist + fs.up[1] * chaseHeight,
+              shipPos[2] - fs.fwd[2] * chaseDist + fs.up[2] * chaseHeight,
             ];
           }
 
@@ -295,7 +318,7 @@ export function SimulatorPage() {
               posAU: [shipPos[0] / AU, shipPos[1] / AU, shipPos[2] / AU],
               fwd: fs.fwd,
               up: fs.up,
-              scale: SHIP_SCALE,
+              scale: shipScale,
               hull: shipHullRef.current,
               accent: shipAccentRef.current,
               boost: boostFromBeta(fs.beta),
@@ -312,7 +335,7 @@ export function SimulatorPage() {
               posAU: p.posAU,
               fwd: p.fwd,
               up: p.up,
-              scale: SHIP_SCALE,
+              scale: shipScale,
               hull: p.hull,
               accent: p.accent,
               boost: boostFromBeta(p.beta),
@@ -343,8 +366,10 @@ export function SimulatorPage() {
 
           if (isJumpComplete(js)) {
             if (jumpTarget) {
+              // setCurrentStar fires the effect that re-inits the flight state
+              // AND spawns at a safe standoff — no manual init here (avoids a
+              // double random-field regeneration and an arrival inside the well).
               setCurrentStar(jumpTarget);
-              initFlightState(flightRef.current, jumpTarget);
             }
             setAppMode('flight');
             setJumpTarget(null);
