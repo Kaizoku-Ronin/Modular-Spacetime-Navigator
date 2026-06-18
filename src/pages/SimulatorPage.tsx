@@ -15,7 +15,7 @@ import { JumpOverlay } from '../components/JumpOverlay';
 import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, spawnStandoff, renderFlight, stepFlight, getFlightHUD, yaw, pitch, aimFlightAt, levelToEclipticNorth } from '../canvas/flightRenderer';
 import { createStarmapState, resizeStarmap, renderStarmap, updateStarmap, findStarAtMouse, findLaneAtMouse, getStarmapHUD } from '../canvas/starmapRenderer';
 import { createJumpState, resetJump, renderJump, updateJump, isJumpComplete, getJumpProgress } from '../canvas/jumpRenderer';
-import { createSolarState, renderSolarSystem, applySolarGravity, getSolarHUD } from '../canvas/solarRenderer';
+import { createSolarState, renderSolarSystem, applyPlanetGravity, getSolarHUD } from '../canvas/solarRenderer';
 import type { SolarState } from '../canvas/solarRenderer';
 import { buildSolarSystem, julianDate, updateSolarPositions } from '../data/solarSystem';
 import type { Planet } from '../data/solarSystem';
@@ -274,9 +274,9 @@ export function SimulatorPage() {
           if (!fs.paused) {
             stepFlight(fs, dt);
 
-            // Apply solar gravity sway when in Sol system
+            // Per-planet gravity + solid collision barriers (Sol system)
             if (fs.isSolar && planetsRef.current.length > 0) {
-              applySolarGravity(fs, solarRef.current, dt, planetsRef.current);
+              applyPlanetGravity(fs, planetsRef.current, planetScale, dt);
             }
 
             // Live ephemeris: advance positions by the compressed time elapsed

@@ -4,7 +4,7 @@
 // Integrates into the flight renderer pipeline.
 // ============================================================
 
-import { dot, len, norm, cross } from '../lib/math3d';
+import { dot, len, norm, cross, clamp, rot } from '../lib/math3d';
 import { tempToRGB } from '../data/solarSystem';
 import type { FlightState } from './flightRenderer';
 import { aberrateLocal } from './flightRenderer';
@@ -220,7 +220,8 @@ function drawPlanetSphere(
   const spin = (s.coordT / 3600 / spinH) * 2 * Math.PI;
 
   const base = hexRGB(planet.col);
-  const ambient = 0.07;
+  const ambient = 0.16;
+  const BRIGHT = 1.3; // overall visibility gain
 
   for (let j = 0; j < B; j++) {
     const vy = (j + 0.5 - rB) / rB;
@@ -243,10 +244,10 @@ function drawPlanetSphere(
         nwx * e1[0] + nwy * e1[1] + nwz * e1[2],
       ) + spin;
       const alb = surfaceAlbedo(planet.name, planet.kind, base, lat, lon);
-      const limb = 0.55 + 0.45 * vz; // gentle limb darkening
-      data[o]     = Math.min(255, alb[0] * 255 * shade * limb);
-      data[o + 1] = Math.min(255, alb[1] * 255 * shade * limb);
-      data[o + 2] = Math.min(255, alb[2] * 255 * shade * limb);
+      const limb = 0.64 + 0.36 * vz; // gentle limb darkening
+      data[o]     = Math.min(255, alb[0] * 255 * shade * limb * BRIGHT);
+      data[o + 1] = Math.min(255, alb[1] * 255 * shade * limb * BRIGHT);
+      data[o + 2] = Math.min(255, alb[2] * 255 * shade * limb * BRIGHT);
       data[o + 3] = 255;
     }
   }
@@ -453,6 +454,82 @@ export function applySolarGravity(s: FlightState, solar: SolarState, dt: number,
     : [0, 0, 0];
   const k = Math.min(1, dt * 2.5);
   for (let i = 0; i < 3; i++) solar.sway[i] += (target[i] - solar.sway[i]) * k;
+}
+
+// ---- per-planet gravity + solid collision barriers ----
+// Each body pulls only inside its own sphere of influence (range), sized in
+// units of its scaled visual radius so wells never overlap or reach the Sun.
+// Gravity reuses the orbital-relief + capped-authority model: below a body's
+// circular-orbit speed the pull is a gentle, escapable lean; at/above it you can
+// orbit or slingshot. Bodies are also solid — the ship is clamped just outside
+// each surface, exactly like the black-hole horizon shield. Tunables below.
+const PLANET_GM_K = 6.25;   // Earth surface circular-orbit speed = sqrt(K) wu/s
+const PLANET_RANGE_K = 40;  // SOI radius, in scaled visual radii
+const SHIP_R_KM = 1188;     // Pluto-sized ship, padded into the barrier
+const SUN_R_KM = 696000;    // Sun is solid too (never flown through)
+const EARTH_G_REF = 5.972e24 / (6371 * 6371); // surface-gravity reference (kg/km^2)
+const P_MAXTURN = 2.0;
+const P_TURN_FRAC = 0.5;    // gravity may use at most half the turn budget
+
+export function applyPlanetGravity(s: FlightState, planets: Planet[], planetScale: number, dt: number) {
+  const sp = traversalSpeed(s.beta, s.timeScale);
+  const shipR = (SHIP_R_KM / 149597870.7) * AU * planetScale;
+
+  // 1) accumulate gravity from every in-range body (orbital relief + edge fade)
+  const g = [0, 0, 0];
+  for (const p of planets) {
+    const cx = p.pos[0] * AU, cy = p.pos[1] * AU, cz = p.pos[2] * AU;
+    const dx = s.cam[0] - cx, dy = s.cam[1] - cy, dz = s.cam[2] - cz;
+    const r = Math.hypot(dx, dy, dz);
+    const worldR = (p.R / 149597870.7) * AU * planetScale;
+    const range = worldR * PLANET_RANGE_K;
+    if (r < 1e-4 || r > range) continue;
+    const gRel = (p.mass / (p.R * p.R)) / EARTH_G_REF; // respective surface gravity
+    const GM = PLANET_GM_K * gRel * worldR;
+    const gIn = GM / (r * r);
+    const vCirc = Math.sqrt(GM / r);
+    const relief = Math.min(1, sp / Math.max(vCirc, 1e-6));
+    const fade = r > range * 0.85 ? Math.max(0, (range - r) / (range * 0.15)) : 1;
+    const gs = gIn * relief * fade;
+    g[0] += (-dx / r) * gs; g[1] += (-dy / r) * gs; g[2] += (-dz / r) * gs;
+  }
+
+  // 2) bend heading toward the accumulated pull (capped, roll-preserving)
+  if (g[0] !== 0 || g[1] !== 0 || g[2] !== 0) {
+    const V = [s.fwd[0] * sp + g[0] * dt, s.fwd[1] * sp + g[1] * dt, s.fwd[2] * sp + g[2] * dt];
+    const nh = norm(V);
+    const ang = Math.acos(clamp(dot(nh, s.fwd), -1, 1));
+    const mx = P_TURN_FRAC * P_MAXTURN * dt;
+    const oldFwd = [s.fwd[0], s.fwd[1], s.fwd[2]];
+    s.fwd = ang > mx && ang > 1e-6 ? norm(rot(s.fwd, norm(cross(s.fwd, nh)), mx)) : nh;
+    const fax = cross(oldFwd, s.fwd);
+    const fsin = len(fax);
+    if (fsin > 1e-7) {
+      const fa = Math.atan2(fsin, dot(oldFwd, s.fwd));
+      const fn = [fax[0] / fsin, fax[1] / fsin, fax[2] / fsin];
+      s.right = rot(s.right, fn, fa);
+      s.up = rot(s.up, fn, fa);
+    }
+  }
+
+  // 3) solid barriers: clamp the ship just outside each surface (planets + Sun)
+  for (const p of planets) {
+    const cx = p.pos[0] * AU, cy = p.pos[1] * AU, cz = p.pos[2] * AU;
+    const dx = s.cam[0] - cx, dy = s.cam[1] - cy, dz = s.cam[2] - cz;
+    const r = Math.hypot(dx, dy, dz);
+    const worldR = (p.R / 149597870.7) * AU * planetScale;
+    const barrier = worldR * 1.05 + shipR;
+    if (r > 1e-6 && r < barrier) {
+      const kk = barrier / r;
+      s.cam = [cx + dx * kk, cy + dy * kk, cz + dz * kk];
+    }
+  }
+  const rSun = len(s.cam);
+  const sunBarrier = (SUN_R_KM / 149597870.7) * AU * 1.05 + shipR;
+  if (rSun > 1e-6 && rSun < sunBarrier) {
+    const kk = sunBarrier / rSun;
+    s.cam = [s.cam[0] * kk, s.cam[1] * kk, s.cam[2] * kk];
+  }
 }
 
 // ---- MAIN RENDER ----
