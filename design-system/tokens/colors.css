@@ -1,0 +1,90 @@
+/* ============================================================
+   MSN — Color tokens
+   The Modular Spacetime Navigator palette: a near-black void,
+   a teal HUD, and the four-cusp accent ramp. Every value here
+   is lifted verbatim from the simulator source (index.css /
+   lib/colors.ts) so designs match the live product exactly.
+   ============================================================ */
+
+:root {
+  /* ---- Base surfaces (the void) ---- */
+  --void: #03050a;            /* page background — true near-black */
+  --void-2: #060c12;          /* panel base, before alpha */
+  --surface-card: #050b12;    /* opaque card fill */
+  --surface-raised: #0b141c;  /* hover / raised rows */
+
+  /* Signature glass panel — the HUD readout fill (translucent). */
+  --panel: rgba(6, 12, 18, 0.72);
+  --panel-strong: rgba(6, 12, 18, 0.82);
+
+  /* ---- Ink (text) ---- */
+  --ink: #cfe7e6;             /* primary text — pale cyan-white */
+  --ink-bright: #e6f5f3;      /* emphasis / hover text */
+  --ink-mid: #9fd0cb;         /* secondary numeric values */
+  --ink-dim: #5f7e7d;         /* labels, muted, captions */
+  --ink-faint: #3a514f;       /* disabled, ghost */
+
+  /* ---- Primary: HUD teal ("safe") ---- */
+  --teal: #46e0d2;
+  --teal-deep: #1d6b66;       /* slider track start, gauges */
+  --teal-soft: #cfe8e4;       /* light teal text on dark */
+  --teal-12: rgba(70, 224, 210, 0.12);  /* tint fill */
+  --teal-18: rgba(70, 224, 210, 0.18);  /* hairline border */
+  --teal-30: rgba(70, 224, 210, 0.30);  /* active border */
+  --teal-40: rgba(70, 224, 210, 0.40);  /* strong border */
+
+  /* ---- Status ---- */
+  --warn: #ffb648;            /* amber — flight regime, near-horizon */
+  --warn-12: rgba(255, 182, 72, 0.12);
+  --warn-30: rgba(255, 182, 72, 0.30);
+  --alert: #ff4466;           /* red — destructive / critical */
+  --alert-12: rgba(255, 68, 102, 0.12);
+
+  /* ---- Mode accent ---- */
+  --violet: #9b59ff;          /* STARMAP mode + hyperjump UI */
+  --violet-12: rgba(155, 89, 255, 0.12);
+  --violet-30: rgba(155, 89, 255, 0.40);
+
+  /* ---- The four cusps of D(143) — canonical accent ramp.
+     Hot/small -> cool/large. Single source of truth. ---- */
+  --cusp-planck: #ff5f9e;        /* width 1   — magenta */
+  --cusp-stellar: #b86bff;       /* width 11  — violet */
+  --cusp-galactic: #4db6e8;      /* width 13  — sky blue */
+  --cusp-cosmological: #4a6cf0;  /* width 143 — indigo */
+
+  /* ---- Spectral type colors (star classification) ---- */
+  --spectral-ob: #5a7cff;     /* O / B — hot blue */
+  --spectral-a: #8aa4ff;      /* A     — blue-white */
+  --spectral-f: #fff5e0;      /* F     — white */
+  --spectral-g: #ffe88a;      /* G     — yellow (Sol) */
+  --spectral-k: #ffaa44;      /* K     — orange */
+  --spectral-m: #ff6622;      /* M     — red dwarf */
+  --spectral-lty: #441100;    /* L/T/Y — brown dwarf */
+  --spectral-wd: #c0d8ff;     /* D     — white dwarf */
+
+  /* ---- Hyperjump / warp tunnel ---- */
+  --tunnel-core: #aaddff;
+  --tunnel-edge: #1a33aa;
+  --hyper-flash: #ffffff;
+
+  /* ---- Hairlines (decreasing strength) ---- */
+  --hair: rgba(70, 224, 210, 0.18);
+  --hair-soft: rgba(70, 224, 210, 0.12);
+  --hair-faint: rgba(70, 224, 210, 0.06);
+
+  /* ============================================================
+     Semantic aliases — reach for these in product UI.
+     ============================================================ */
+  --bg: var(--void);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-mid);
+  --text-muted: var(--ink-dim);
+  --text-value: var(--teal);            /* live telemetry values */
+  --accent: var(--teal);
+  --accent-tint: var(--teal-12);
+  --border-hud: var(--hair);
+  --border-active: var(--teal-30);
+  --status-cruise: var(--teal);
+  --status-flight: var(--warn);
+  --status-jump: var(--violet);
+}

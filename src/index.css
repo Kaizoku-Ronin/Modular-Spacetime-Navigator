@@ -206,6 +206,38 @@
   cursor: pointer;
 }
 
+/* ---- T·COMP rail — vertical fill-gauge slider (left rail) ---- */
+.tcomp-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 4px;
+  height: 96px;
+  border-radius: 3px;
+  background: linear-gradient(to top, #1d6b66, #46e0d2);
+  outline: none;
+  cursor: pointer;
+}
+.tcomp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #cfe7e6;
+  border: 2px solid #46e0d2;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(70, 224, 210, 0.6);
+}
+.tcomp-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #cfe7e6;
+  border: 2px solid #46e0d2;
+  cursor: pointer;
+}
+
 /* ---- Corner HUD panels: scale continuously so the two top panels always fit
    and never collide, regardless of the (sometimes wrong) layout-viewport width
    an in-app browser reports. --hud-scale is computed from visualViewport in JS

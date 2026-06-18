@@ -1,0 +1,37 @@
+<!-- @dsCard group="Colors" viewport="700x180" name="Status — cruise, flight, jump, alert" subtitle="Cockpit signal colors: teal safe, amber caution, violet jump, red critical" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--void); font-family: var(--font-mono); padding: 22px; }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .sw { display: flex; flex-direction: column; gap: 8px; }
+  .chip { width: 132px; height: 66px; border-radius: var(--radius-sm); display:flex; align-items:flex-end; padding: 8px; box-sizing: border-box; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .name { font-size: 9.5px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink); }
+  .hex { font-size: 9.5px; color: var(--ink-dim); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="sw">
+      <div class="chip" style="background:var(--teal-12);border:1px solid var(--teal-30)"><span class="dot" style="background:var(--teal);box-shadow:var(--glow-teal)"></span></div>
+      <span class="name" style="color:var(--teal)">Cruise · safe</span><span class="hex">#46e0d2</span>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:var(--warn-12);border:1px solid var(--warn-30)"><span class="dot" style="background:var(--warn);box-shadow:var(--glow-warn)"></span></div>
+      <span class="name" style="color:var(--warn)">Flight · caution</span><span class="hex">#ffb648</span>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:var(--violet-12);border:1px solid var(--violet-30)"><span class="dot" style="background:var(--violet);box-shadow:var(--glow-violet)"></span></div>
+      <span class="name" style="color:var(--violet)">Jump · starmap</span><span class="hex">#9b59ff</span>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:var(--alert-12);border:1px solid rgba(255,68,102,.4)"><span class="dot" style="background:var(--alert)"></span></div>
+      <span class="name" style="color:var(--alert)">Alert · critical</span><span class="hex">#ff4466</span>
+    </div>
+  </div>
+</body>
+</html>

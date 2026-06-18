@@ -1,0 +1,504 @@
+{
+  "lanes": [
+    {
+      "from": "Proxima Centauri",
+      "to": "Alpha Centauri A",
+      "distance_ly": 0.13,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Proxima Centauri",
+      "to": "Alpha Centauri B",
+      "distance_ly": 0.13,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Groombridge 34 A",
+      "to": "YZ Ceti",
+      "distance_ly": 0.661,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Groombridge 34 B",
+      "to": "YZ Ceti",
+      "distance_ly": 0.661,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Groombridge 34 A",
+      "to": "Tau Ceti",
+      "distance_ly": 0.72,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Groombridge 34 B",
+      "to": "Tau Ceti",
+      "distance_ly": 0.72,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Luhman 16 A",
+      "to": "WISE 0855-0714",
+      "distance_ly": 0.84,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Luhman 16 B",
+      "to": "WISE 0855-0714",
+      "distance_ly": 0.84,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Tau Ceti",
+      "to": "YZ Ceti",
+      "distance_ly": 0.963,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Groombridge 34 A",
+      "to": "GJ 1061",
+      "distance_ly": 1.253,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Groombridge 34 B",
+      "to": "GJ 1061",
+      "distance_ly": 1.253,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Tau Ceti",
+      "to": "GJ 1061",
+      "distance_ly": 1.531,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "GJ 1061",
+      "to": "YZ Ceti",
+      "distance_ly": 1.598,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Epsilon Eridani",
+      "to": "Lacaille 9352",
+      "distance_ly": 1.672,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "61 Cygni A",
+      "to": "Luyten's Star",
+      "distance_ly": 1.674,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "61 Cygni B",
+      "to": "Luyten's Star",
+      "distance_ly": 1.674,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Struve 2398 A",
+      "to": "Kruger 60 A",
+      "distance_ly": 1.758,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Struve 2398 A",
+      "to": "Kruger 60 B",
+      "distance_ly": 1.758,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Struve 2398 B",
+      "to": "Kruger 60 A",
+      "distance_ly": 1.758,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Struve 2398 B",
+      "to": "Kruger 60 B",
+      "distance_ly": 1.758,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Ross 128",
+      "to": "YZ Ceti",
+      "distance_ly": 1.85,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Ross 128",
+      "to": "Groombridge 34 A",
+      "distance_ly": 1.955,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Ross 128",
+      "to": "Groombridge 34 B",
+      "distance_ly": 1.955,
+      "cusp_class": "planck"
+    },
+    {
+      "from": "Luyten's Star",
+      "to": "Wolf 424 A",
+      "distance_ly": 2.029,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Luyten's Star",
+      "to": "Wolf 424 B",
+      "distance_ly": 2.029,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Lacaille 9352",
+      "to": "Teegarden's Star",
+      "distance_ly": 2.121,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Ross 128",
+      "to": "Tau Ceti",
+      "distance_ly": 2.337,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Epsilon Eridani",
+      "to": "Teegarden's Star",
+      "distance_ly": 2.393,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Wolf 672 A",
+      "to": "AZ Cancri",
+      "distance_ly": 2.678,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "61 Cygni A",
+      "to": "Wolf 424 A",
+      "distance_ly": 2.774,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "61 Cygni A",
+      "to": "Wolf 424 B",
+      "distance_ly": 2.774,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "61 Cygni B",
+      "to": "Wolf 424 A",
+      "distance_ly": 2.774,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "61 Cygni B",
+      "to": "Wolf 424 B",
+      "distance_ly": 2.774,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Luyten 726-8 A",
+      "to": "Ross 154",
+      "distance_ly": 3.079,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Luyten 726-8 B",
+      "to": "Ross 154",
+      "distance_ly": 3.079,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Ross 128",
+      "to": "GJ 1061",
+      "distance_ly": 3.092,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "van Maanen's Star",
+      "to": "40 Eridani A",
+      "distance_ly": 3.202,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "van Maanen's Star",
+      "to": "40 Eridani B",
+      "distance_ly": 3.202,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "van Maanen's Star",
+      "to": "40 Eridani C",
+      "distance_ly": 3.202,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Alpha Centauri A",
+      "to": "Luhman 16 A",
+      "distance_ly": 3.254,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Alpha Centauri A",
+      "to": "Luhman 16 B",
+      "distance_ly": 3.254,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Alpha Centauri B",
+      "to": "Luhman 16 A",
+      "distance_ly": 3.254,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Alpha Centauri B",
+      "to": "Luhman 16 B",
+      "distance_ly": 3.254,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Proxima Centauri",
+      "to": "Luhman 16 A",
+      "distance_ly": 3.315,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Proxima Centauri",
+      "to": "Luhman 16 B",
+      "distance_ly": 3.315,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Ross 614 A",
+      "to": "AZ Cancri",
+      "distance_ly": 3.332,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Kruger 60 A",
+      "to": "WD 1142-645",
+      "distance_ly": 3.339,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Kruger 60 B",
+      "to": "WD 1142-645",
+      "distance_ly": 3.339,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Struve 2398 A",
+      "to": "WD 1142-645",
+      "distance_ly": 3.454,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Struve 2398 B",
+      "to": "WD 1142-645",
+      "distance_ly": 3.454,
+      "cusp_class": "stellar"
+    },
+    {
+      "from": "Lacaille 8760",
+      "to": "van Maanen's Star",
+      "distance_ly": 3.526,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Sirius A",
+      "to": "Procyon A",
+      "distance_ly": 3.645,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Sirius A",
+      "to": "Procyon B",
+      "distance_ly": 3.645,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Sirius B",
+      "to": "Procyon A",
+      "distance_ly": 3.645,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Sirius B",
+      "to": "Procyon B",
+      "distance_ly": 3.645,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii A",
+      "to": "WD 1142-645",
+      "distance_ly": 3.845,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii B",
+      "to": "WD 1142-645",
+      "distance_ly": 3.845,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii C",
+      "to": "WD 1142-645",
+      "distance_ly": 3.845,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Alpha Centauri A",
+      "to": "WISE 0855-0714",
+      "distance_ly": 3.972,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Alpha Centauri B",
+      "to": "WISE 0855-0714",
+      "distance_ly": 3.972,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Proxima Centauri",
+      "to": "WISE 0855-0714",
+      "distance_ly": 4.046,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Sol",
+      "to": "Proxima Centauri",
+      "distance_ly": 4.24,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Sol",
+      "to": "Alpha Centauri A",
+      "distance_ly": 4.37,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Sol",
+      "to": "Alpha Centauri B",
+      "distance_ly": 4.37,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Lacaille 9352",
+      "to": "Tau Ceti",
+      "distance_ly": 4.513,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Ross 614 A",
+      "to": "Wolf 672 A",
+      "distance_ly": 4.56,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Ross 154",
+      "to": "Kapteyn's Star",
+      "distance_ly": 4.632,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Barnard's Star",
+      "to": "Luhman 16 A",
+      "distance_ly": 4.732,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Barnard's Star",
+      "to": "Luhman 16 B",
+      "distance_ly": 4.732,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii A",
+      "to": "Struve 2398 A",
+      "distance_ly": 4.74,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii A",
+      "to": "Struve 2398 B",
+      "distance_ly": 4.74,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii B",
+      "to": "Struve 2398 A",
+      "distance_ly": 4.74,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii B",
+      "to": "Struve 2398 B",
+      "distance_ly": 4.74,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii C",
+      "to": "Struve 2398 A",
+      "distance_ly": 4.74,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "EZ Aquarii C",
+      "to": "Struve 2398 B",
+      "distance_ly": 4.74,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Lacaille 9352",
+      "to": "GJ 1061",
+      "distance_ly": 4.744,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Lacaille 9352",
+      "to": "Groombridge 34 A",
+      "distance_ly": 4.869,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Lacaille 9352",
+      "to": "Groombridge 34 B",
+      "distance_ly": 4.869,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Ross 128",
+      "to": "Gliese 1",
+      "distance_ly": 4.873,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Tau Ceti",
+      "to": "Gliese 1",
+      "distance_ly": 4.914,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "Luyten's Star",
+      "to": "van Maanen's Star",
+      "distance_ly": 4.95,
+      "cusp_class": "galactic"
+    },
+    {
+      "from": "YZ Ceti",
+      "to": "Gliese 1",
+      "distance_ly": 4.997,
+      "cusp_class": "galactic"
+    }
+  ],
+  "metadata": {
+    "total_stars": 59,
+    "total_lanes": 82,
+    "lane_threshold_ly": 5.0,
+    "min_lane_ly": 0.05,
+    "source": "HYG Database / standard catalogs (curated)",
+    "notes": "Cartesian coords normalized so |xyz| == distance_ly. Co-located binary components share coordinates by design. cusp_class is decorative nomenclature (a length-binning of lanes using three of the four D(143) cusp names); it is not derived modular structure. The cosmological cusp (width 143) is the system/de Sitter scale, not a lane."
+  }
+}

@@ -1,0 +1,35 @@
+<!-- @dsCard group="Brand" viewport="700x240" name="Brand mark — the four cusps" subtitle="Concentric rings (teal/amber/teal/violet core) echoing X₀(143)'s four cusps" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--void); padding: 28px; font-family: var(--font-mono); display:flex; gap: 40px; align-items:center; }
+  .mark { width: 120px; height: 120px; }
+  .info { display:flex; flex-direction:column; gap: 10px; }
+  .wm { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; }
+  .over { font-size: 10px; color: var(--teal); letter-spacing: var(--track-wide); text-transform: uppercase; }
+  .sub { font-size: 10px; color: var(--ink-dim); letter-spacing: 0.04em; line-height: 1.6; }
+  .spin g { transform-origin: 50% 50%; }
+  .r0 { animation: cw 20s linear infinite; }
+  .r1 { animation: ccw 13s linear infinite; }
+  .r2 { animation: cw 11s linear infinite; }
+  @keyframes cw { to { transform: rotate(360deg);} }
+  @keyframes ccw { to { transform: rotate(-360deg);} }
+</style>
+</head>
+<body>
+  <svg class="mark spin" viewBox="0 0 32 32">
+    <g class="r0"><circle cx="16" cy="16" r="14" fill="none" stroke="#46e0d2" stroke-width="0.8" opacity="0.6" stroke-dasharray="3 2"/></g>
+    <g class="r1"><circle cx="16" cy="16" r="10" fill="none" stroke="#ffb648" stroke-width="0.7" opacity="0.5" stroke-dasharray="2 1.5"/></g>
+    <g class="r2"><circle cx="16" cy="16" r="6" fill="none" stroke="#46e0d2" stroke-width="0.7" opacity="0.7"/></g>
+    <circle cx="16" cy="16" r="2" fill="#9b59ff" opacity="0.9"/>
+  </svg>
+  <div class="info">
+    <span class="over">X₀(143) · Modular Curve Theory</span>
+    <span class="wm">Modular Spacetime Navigator</span>
+    <span class="sub">Four rotating rings = the four cusps {1, 11, 13, 143}.<br>Teal hull · amber caution · violet singularity core.</span>
+  </div>
+</body>
+</html>

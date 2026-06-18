@@ -1,0 +1,232 @@
+<!-- @dsCard group="Lore" viewport="1280x720" name="Lore — the mathematics of spacetime" subtitle="Scroll-driven worldbuilding page: hero, four cusps, physics, catalog" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MSN — The Mathematics of Spacetime</title>
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--void); color: var(--ink); font-family: var(--font-body); }
+  .mono { font-family: var(--font-mono); }
+  .disp { font-family: var(--font-display); }
+
+  /* nav */
+  nav { position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+    background: rgba(3,5,10,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--hair); }
+  nav .back { font-family: var(--font-mono); font-size: 11px; color: var(--teal);
+    letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; display: flex; gap: 6px; }
+  nav .wm { font-family: var(--font-display); font-size: 14px; color: var(--ink-dim); letter-spacing: 0.08em; }
+
+  /* hero */
+  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 56px 24px 0;
+    background-image: url('../../assets/lore-hero-bg.webp'); background-size: cover; background-position: center; }
+  .overline { font-family: var(--font-mono); font-size: 11px; color: var(--teal);
+    letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 24px; }
+  .hero h1 { font-family: var(--font-display); font-size: clamp(40px, 8vw, 96px); font-weight: 700;
+    letter-spacing: -0.03em; line-height: 1; margin: 0; }
+  .hero p { font-weight: 300; font-size: clamp(14px, 2vw, 20px); color: var(--ink-dim);
+    max-width: 560px; line-height: 1.6; margin: 24px 0 0; }
+  .scroll { position: absolute; bottom: 32px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .scroll .track { width: 1px; height: 40px; background: rgba(95,126,125,0.3); position: relative; }
+  .scroll .dot { position: absolute; top: 0; left: -1.5px; width: 4px; height: 4px; border-radius: 50%;
+    background: var(--teal); animation: scrolldot 2s ease-in-out infinite; }
+  @keyframes scrolldot { 0%{transform:translateY(0);opacity:1} 70%{transform:translateY(36px);opacity:0} 100%{opacity:0} }
+
+  section.band { padding: 100px 40px; max-width: 1100px; margin: 0 auto; }
+  .center { text-align: center; }
+  h2.sec { font-family: var(--font-display); font-size: clamp(28px,4vw,48px); font-weight: 700; margin: 0 0 8px; }
+  .seclabel { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); letter-spacing: 0.06em; }
+
+  /* cusps */
+  .cusp-wrap { display: flex; gap: 40px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 56px; }
+  .mark { width: min(380px, 60vw); height: min(380px, 60vw); }
+  .cusp-list { display: flex; flex-direction: column; gap: 16px; min-width: 240px; }
+  .cusp-row { display: flex; gap: 12px; padding: 10px 14px; border-radius: 6px; }
+  .cusp-row .w { font-family: var(--font-mono); font-size: 14px; font-weight: 700; min-width: 36px; }
+  .cusp-row .t { font-family: var(--font-display); font-size: 13px; font-weight: 500; color: var(--ink); }
+  .cusp-row .d { font-size: 11px; font-weight: 300; color: var(--ink-dim); line-height: 1.4; }
+  .summary { text-align: center; margin-top: 64px; padding: 16px; border-radius: 8px;
+    border: 1px solid var(--hair-soft); background: var(--teal-12); }
+  .summary .eq { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--teal); }
+  .summary p { font-weight: 300; color: var(--ink-dim); margin: 8px 0 0; font-size: 14px; }
+
+  /* physics grid */
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 40px; }
+  .pgrid h3 { font-family: var(--font-display); font-size: 16px; font-weight: 500; margin: 0 0 8px; }
+  .pgrid p.body { font-weight: 300; font-size: 16px; line-height: 1.7; margin: 0 0 24px; color: var(--ink); }
+  .fcard { background: var(--panel); border: 1px solid var(--hair); border-radius: 8px; padding: 16px; margin-bottom: 8px; }
+  .fcard .k { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; margin-bottom: 8px; }
+  .fcard .f { font-family: var(--font-mono); font-size: clamp(16px,2vw,22px); font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .fcard .n { font-size: 12px; color: var(--ink-dim); line-height: 1.4; }
+
+  /* counters */
+  .counters { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin: 0 0 56px; }
+  .counter .num { font-family: var(--font-display); font-size: clamp(48px,8vw,80px); font-weight: 700; line-height: 1; }
+  .counter .lbl { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-top: 8px; text-align: center; }
+
+  /* catalog */
+  table { width: 100%; border-collapse: collapse; }
+  th { font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 12px; text-align: left;
+    border-bottom: 2px solid var(--hair); }
+  th.num, td.num { text-align: right; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(95,126,125,0.1); }
+  td.name { font-family: var(--font-display); font-size: 13px; font-weight: 500; color: var(--ink); }
+  td.val { font-family: var(--font-mono); font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  td.notes { font-size: 12px; font-style: italic; color: var(--ink-dim); }
+  .spec { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: rgba(70,224,210,0.04); }
+
+  /* reveal */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s var(--ease-ui), transform .7s var(--ease-ui); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+
+  footer { padding: 64px 40px; text-align: center; border-top: 1px solid var(--hair-soft); }
+  footer .wm { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+  footer .meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); margin-top: 8px; letter-spacing: 0.04em; }
+
+  /* cusp diagram rings */
+  .r0 { animation: cw 20s linear infinite; } .r1 { animation: ccw 13s linear infinite; }
+  .r2 { animation: cw 11s linear infinite; } .r3 { animation: ccw 7s linear infinite; }
+  .ring g { transform-origin: 50% 50%; }
+  @keyframes cw { to { transform: rotate(360deg);} } @keyframes ccw { to { transform: rotate(-360deg);} }
+</style>
+</head>
+<body>
+  <nav>
+    <a class="back" href="../simulator/index.html">← Back to Navigator</a>
+    <span class="wm">Modular Spacetime Navigator</span>
+    <span style="width:140px"></span>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="overline">X₀(143) · Modular Curve Theory</div>
+    <h1>The Mathematics<br>of Spacetime</h1>
+    <p>A modular curve at the heart of every star. Four cusps bridging cosmological, galactic, stellar, and Planck scales. Sixty real stars. One hundred and five hyperspace lanes. This is the geometry that connects them.</p>
+    <div class="scroll"><div class="track"><div class="dot"></div></div><span class="mono" style="font-size:9px;color:var(--ink-dim);letter-spacing:0.1em">SCROLL</span></div>
+  </header>
+
+  <!-- CUSPS -->
+  <section class="band">
+    <div class="center reveal">
+      <h2 class="sec disp">X₀(143) &amp; The Four Cusps</h2>
+      <div class="seclabel">Divisors of 143 define the scale boundaries of spacetime</div>
+    </div>
+    <div class="cusp-wrap reveal">
+      <svg class="mark ring" viewBox="0 0 400 400" style="overflow:visible">
+        <circle cx="200" cy="200" r="176" fill="none" stroke="rgba(95,126,125,0.12)" stroke-width="0.5"/>
+        <g class="r0"><circle cx="200" cy="200" r="168" fill="none" stroke="#4a6cf0" stroke-width="1.5" opacity="0.7" stroke-dasharray="14 6"/></g>
+        <g class="r1"><circle cx="200" cy="200" r="100" fill="none" stroke="#4db6e8" stroke-width="1.5" opacity="0.7" stroke-dasharray="10 5"/></g>
+        <g class="r2"><circle cx="200" cy="200" r="58" fill="none" stroke="#b86bff" stroke-width="1.5" opacity="0.7" stroke-dasharray="8 4"/></g>
+        <g class="r3"><circle cx="200" cy="200" r="26" fill="none" stroke="#ff5f9e" stroke-width="2" opacity="0.8"/></g>
+        <circle cx="200" cy="200" r="3" fill="#46e0d2" opacity="0.8"/>
+        <text x="368" y="44" fill="#4a6cf0" font-size="13" font-family="'JetBrains Mono',monospace" font-weight="700">143</text>
+        <text x="296" y="112" fill="#4db6e8" font-size="13" font-family="'JetBrains Mono',monospace" font-weight="700">13</text>
+        <text x="252" y="156" fill="#b86bff" font-size="13" font-family="'JetBrains Mono',monospace" font-weight="700">11</text>
+        <text x="222" y="184" fill="#ff5f9e" font-size="13" font-family="'JetBrains Mono',monospace" font-weight="700">1</text>
+      </svg>
+      <div class="cusp-list">
+        <div class="cusp-row" style="border:1px solid #4a6cf025;background:#4a6cf008"><span class="w" style="color:#4a6cf0">143</span><div><div class="t">Cosmological</div><div class="d">The boundary of observable spacetime</div></div></div>
+        <div class="cusp-row" style="border:1px solid #4db6e825;background:#4db6e808"><span class="w" style="color:#4db6e8">13</span><div><div class="t">Galactic</div><div class="d">Stellar neighborhoods and hyperspace lanes</div></div></div>
+        <div class="cusp-row" style="border:1px solid #b86bff25;background:#b86bff08"><span class="w" style="color:#b86bff">11</span><div><div class="t">Stellar</div><div class="d">Star systems, accretion disks, flight corridors</div></div></div>
+        <div class="cusp-row" style="border:1px solid #ff5f9e25;background:#ff5f9e08"><span class="w" style="color:#ff5f9e">1</span><div><div class="t">Planck</div><div class="d">Event horizon, quantum gravity, singularity</div></div></div>
+      </div>
+    </div>
+    <div class="summary reveal">
+      <span class="eq">D(143) = {1, 11, 13, 143}</span>
+      <p>The divisor structure of 143 organizes all scales of the simulator</p>
+    </div>
+  </section>
+
+  <!-- PHYSICS -->
+  <section class="band">
+    <div class="reveal"><h2 class="sec disp" style="margin-bottom:24px">Physics of the Simulator</h2></div>
+    <div class="pgrid">
+      <div class="reveal">
+        <h3>Special Relativity</h3>
+        <p class="body">The flight simulator implements exact special relativistic effects. As your velocity approaches the speed of light, three phenomena become visible: aberration (stars crowd in front of you), Doppler shifting (ahead blueshift, behind redshift), and relativistic beaming.</p>
+        <h3>Gravity &amp; The Black Hole</h3>
+        <p class="body">Each system centers on a black hole whose mass is proportional to the host star. Gravity bends your heading but preserves cruise speed. The Horizon Shield prevents you from crossing the point of no return.</p>
+      </div>
+      <div class="reveal">
+        <div class="fcard"><div class="k" style="color:var(--teal)">Lorentz Factor</div><div class="f">γ = 1 / √(1 − β²)</div><div class="n">At β=0.5, γ=1.15. At β=0.99, γ=7.09.</div></div>
+        <div class="fcard"><div class="k" style="color:var(--warn)">Schwarzschild Radius</div><div class="f">rₛ = 2GM/c²</div><div class="n">The event horizon scales linearly with mass. Sol's black hole: rₛ ≈ 2.95 km.</div></div>
+        <div class="fcard"><div class="k" style="color:var(--violet)">Lane Classification</div>
+          <div class="mono" style="font-size:13px;color:#46e0d2;display:flex;justify-content:space-between;padding:3px 0"><span>planck: d &lt; 2.0 ly</span><span>(46)</span></div>
+          <div class="mono" style="font-size:13px;color:#ffb648;display:flex;justify-content:space-between;padding:3px 0"><span>stellar: 2.0–3.5 ly</span><span>(25)</span></div>
+          <div class="mono" style="font-size:13px;color:#9b59ff;display:flex;justify-content:space-between;padding:3px 0"><span>galactic: 3.5–5.0 ly</span><span>(34)</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATALOG + COUNTERS -->
+  <section class="band">
+    <div class="center reveal" style="margin-bottom:40px">
+      <h2 class="sec disp">The Lane Network</h2>
+      <div class="seclabel">105 hyperspace lanes connecting 60 star systems</div>
+    </div>
+    <div class="counters reveal">
+      <div class="counter"><div class="num" data-count="60" style="color:#46e0d2">0</div><div class="lbl">Star systems</div></div>
+      <div class="counter"><div class="num" data-count="105" style="color:#ffb648">0</div><div class="lbl">Hyperspace lanes</div></div>
+      <div class="counter"><div class="num" data-count="20" style="color:#9b59ff">0</div><div class="lbl">Light year radius</div></div>
+    </div>
+    <div class="reveal" style="border-radius:8px;border:1px solid rgba(70,224,210,0.08);overflow:hidden">
+      <table>
+        <thead><tr><th>Name</th><th>Type</th><th class="num">Dist (ly)</th><th class="num">Mass (M☉)</th><th>Notes</th></tr></thead>
+        <tbody id="catalog"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wm disp">Modular Spacetime Navigator</div>
+    <div class="meta">X₀(143) · 60 stars · 105 lanes · Data: HYG Database · © 2026 Roger Tano</div>
+  </footer>
+
+<script>
+  const CAT = [
+    ['Sol','G2V',0.0,1.000,'Home system. Real planets, live ephemeris.'],
+    ['Proxima Centauri','M5.5V',4.24,0.122,'Closest star. Hosts Proxima b.'],
+    ['Alpha Centauri A','G2V',4.37,1.100,'Sun-like primary of the αCen triple.'],
+    ['Alpha Centauri B','K1V',4.37,0.907,'Orange companion to αCen A.'],
+    ["Barnard's Star",'M4V',5.96,0.144,'Highest known proper motion.'],
+    ['Wolf 359','M6V',7.86,0.090,'Faint, flaring red dwarf.'],
+    ['Sirius A','A1V',8.60,2.063,'Brightest star in the night sky.'],
+    ['Sirius B','DA2',8.60,1.018,'White-dwarf companion to Sirius A.'],
+    ['Epsilon Eridani','K2V',10.48,0.820,'Young K-dwarf with a debris disk.'],
+    ['Procyon A','F5V',11.46,1.499,'Bright F-type primary.'],
+    ['Tau Ceti','G8V',11.91,0.783,'Sun-like, multiple candidate planets.'],
+  ];
+  const specHex = (t) => ({O:'#5a7cff',B:'#5a7cff',A:'#8aa4ff',F:'#fff5e0',G:'#ffe88a',K:'#ffaa44',M:'#ff6622',D:'#c0d8ff'})[t[0]] || '#cfe7e6';
+  document.getElementById('catalog').innerHTML = CAT.map(([n,t,d,m,notes]) => {
+    const c = specHex(t); const tc = c === '#441100' ? '#b08a78' : c;
+    return `<tr><td class="name">${n}</td>
+      <td><span class="spec" style="color:${tc};background:${c}22">${t}</span></td>
+      <td class="val num">${d.toFixed(2)}</td><td class="val num">${m.toFixed(3)}</td>
+      <td class="notes">${notes}</td></tr>`;
+  }).join('');
+
+  // reveal on scroll
+  const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // animate counters when in view
+  const cio = new IntersectionObserver((es) => es.forEach(e => {
+    if (!e.isIntersecting) return; cio.unobserve(e.target);
+    const t = parseInt(e.target.dataset.count); let v = 0;
+    const step = () => { v += t / 40; if (v >= t) { e.target.textContent = t; } else { e.target.textContent = Math.round(v); requestAnimationFrame(step); } };
+    step();
+  }), { threshold: 0.5 });
+  document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
+</script>
+</body>
+</html>

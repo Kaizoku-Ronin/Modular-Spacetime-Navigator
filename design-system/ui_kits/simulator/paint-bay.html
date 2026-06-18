@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Ronin-class — paint &amp; boost bay</title>
+<style>
+  :root{
+    --bg:#070b11; --panel:rgba(8,14,20,.74); --line:rgba(70,224,210,.18);
+    --cyan:#46e0d2; --amber:#ffb648; --dim:#5f7e7d; --ink:#cfe7e6; --soft:#9fd0cb;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--mono);overflow:hidden}
+  #wrap{position:fixed;inset:0;display:flex;flex-direction:column}
+  #stage{flex:1;position:relative;min-height:0}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .tag{position:absolute;top:12px;left:14px;z-index:5;pointer-events:none}
+  .tag b{font-family:"Space Grotesk",system-ui,sans-serif;color:var(--cyan);font-size:15px;letter-spacing:.04em}
+  .tag span{display:block;color:var(--dim);font-size:10px;letter-spacing:.14em;text-transform:uppercase;margin-top:2px}
+  .readout{position:absolute;top:12px;right:14px;z-index:5;text-align:right;background:var(--panel);
+    border:1px solid var(--line);border-radius:6px;padding:9px 12px;backdrop-filter:blur(5px);min-width:184px}
+  .readout .row{display:flex;justify-content:space-between;gap:14px;font-size:11px;margin:2px 0}
+  .readout .k{color:var(--dim);text-transform:uppercase;font-size:9px;letter-spacing:.12em}
+  .readout .v{color:var(--cyan);font-variant-numeric:tabular-nums}
+  .readout .v.amber{color:var(--amber)}
+  .readout .note{margin-top:7px;padding-top:6px;border-top:1px solid rgba(70,224,210,.12);
+    color:var(--soft);font-size:9.5px;line-height:1.45;text-align:left;letter-spacing:.02em}
+  #dock{flex:none;background:var(--panel);border-top:1px solid var(--line);backdrop-filter:blur(6px);
+    padding:11px 14px calc(11px + env(safe-area-inset-bottom));display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center}
+  .grp{display:flex;align-items:center;gap:9px}
+  .grp>label{font-size:9px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;white-space:nowrap}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:3px;border-radius:3px;background:rgba(70,224,210,.25);outline:none}
+  input[type=range].amber{background:rgba(255,182,72,.3)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--cyan);cursor:pointer;box-shadow:0 0 6px rgba(70,224,210,.6)}
+  input[type=range].amber::-webkit-slider-thumb{background:var(--amber);box-shadow:0 0 7px rgba(255,182,72,.65)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border:none;border-radius:50%;background:var(--cyan);cursor:pointer}
+  .swatch{width:30px;height:26px;border-radius:5px;border:1px solid var(--line);padding:0;cursor:pointer;background:none;overflow:hidden}
+  .swatch input{opacity:0;width:200%;height:200%;transform:translate(-25%,-25%);cursor:pointer;border:none}
+  .val{font-size:11px;color:var(--cyan);font-variant-numeric:tabular-nums;min-width:54px;text-align:right}
+  .val.amber{color:var(--amber)}
+  .btn{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--soft);background:rgba(6,12,18,.6);
+    border:1px solid var(--line);border-radius:5px;padding:6px 11px;cursor:pointer;text-transform:uppercase}
+  .btn.on{color:var(--cyan);border-color:rgba(70,224,210,.5);background:rgba(70,224,210,.1)}
+  .sep{width:1px;height:24px;background:var(--line)}
+  @media(max-width:680px){ .readout{min-width:150px} #dock{gap:9px 14px} }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage">
+    <div class="tag"><b>RONIN-CLASS INTERCEPTOR</b><span>paint &amp; boost bay · drag to orbit</span></div>
+    <div class="readout">
+      <div class="row"><span class="k">Velocity</span><span class="v amber" id="rBeta">0.30 c</span></div>
+      <div class="row"><span class="k">Physical</span><span class="v" id="rKms">—</span></div>
+      <div class="row"><span class="k">Engine drive</span><span class="v" id="rBoost">—</span></div>
+      <div class="row"><span class="k">Time comp</span><span class="v" id="rComp">×120</span></div>
+      <div class="row"><span class="k">1 AU in</span><span class="v" id="rAu">—</span></div>
+      <div class="note" id="rNote"></div>
+    </div>
+    <canvas id="cv"></canvas>
+  </div>
+  <div id="dock">
+    <div class="grp">
+      <label>hull</label>
+      <button class="swatch" title="Hull color"><input type="color" id="cHull" value="#7a8898"></button>
+      <label>accent</label>
+      <button class="swatch" title="Wing / fin color"><input type="color" id="cAccent" value="#d45846"></button>
+      <button class="btn" id="bRand">random</button>
+      <button class="btn" id="bReset">reset</button>
+    </div>
+    <div class="sep"></div>
+    <div class="grp">
+      <label>speed&nbsp;β</label>
+      <input type="range" class="amber" id="sBeta" min="0" max="0.99" step="0.01" value="0.30" style="width:150px">
+      <span class="val amber" id="vBeta">0.30 c</span>
+    </div>
+    <div class="grp">
+      <label>time&nbsp;comp</label>
+      <input type="range" id="sComp" min="1" max="400" step="1" value="120" style="width:120px">
+      <span class="val" id="vComp">×120</span>
+    </div>
+    <div class="sep"></div>
+    <div class="grp">
+      <button class="btn on" id="bSpin">auto-spin</button>
+      <button class="btn on" id="bEdge">facets</button>
+      <button class="btn on" id="bPlume">plumes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ----- math -----
+const D=Math.PI/180;
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const len=v=>Math.hypot(v[0],v[1],v[2]);
+const norm=v=>{const n=len(v)||1;return [v[0]/n,v[1]/n,v[2]/n];};
+const clamp=(x,a,b)=>x<a?a:x>b?b:x;
+const clamp255=x=>x<0?0:x>255?255:x|0;
+const whiten=(c,t)=>[c[0]+(255-c[0])*t, c[1]+(255-c[1])*t, c[2]+(255-c[2])*t];
+const hex2rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+
+// ----- materials (mirror shipMesh.ts) -----
+const ORDER=['hull','hullDark','canopy','accent','engine','exhaust'];
+const MAT={hull:{rgb:[122,136,152],e:false},hullDark:{rgb:[66,76,92],e:false},
+  canopy:{rgb:[96,212,236],e:true},accent:{rgb:[212,88,70],e:false},
+  engine:{rgb:[50,56,70],e:false},exhaust:{rgb:[255,150,70],e:true}};
+const mi=k=>ORDER.indexOf(k);
+
+// ----- buildRonin() — exact port of shipMesh.ts -----
+function buildRonin(){
+  const verts=[],faces=[];
+  const V=(x,y,z)=>{verts.push([x,y,z]);return verts.length-1;};
+  const F=(v,m,two=false)=>faces.push({v,m:mi(m),two});
+  const hexAng=[0,60,120,180,240,300].map(a=>a*D);
+  const ring=(rw,rh,z)=>hexAng.map(a=>V(rw*Math.cos(a),rh*Math.sin(a),z));
+  const rTail=ring(0.34,0.24,-1.5),rAft=ring(0.5,0.3,-1.05),rMid=ring(0.56,0.33,0),rShdr=ring(0.48,0.3,0.9);
+  const tip=V(0,0.06,2.52);
+  const band=(a,b,m)=>{for(let i=0;i<6;i++)F([a[i],a[(i+1)%6],b[(i+1)%6],b[i]],m);};
+  band(rTail,rAft,'hullDark');band(rAft,rMid,'hull');band(rMid,rShdr,'hull');
+  for(let i=0;i<6;i++)F([rShdr[i],rShdr[(i+1)%6],tip],'hull');
+  F([rTail[0],rTail[1],rTail[2],rTail[3],rTail[4],rTail[5]],'hullDark');
+  const cBL=V(-0.17,0.235,0.3),cBR=V(0.17,0.235,0.3),cFL=V(-0.1,0.215,1.2),cFR=V(0.1,0.215,1.2),cAP=V(0,0.39,0.66);
+  F([cBL,cFL,cAP],'canopy');F([cFL,cFR,cAP],'canopy');F([cFR,cBR,cAP],'canopy');F([cBR,cBL,cAP],'canopy');
+  const wing=s=>{const leRoot=V(s*0.48,0.05,0.18),teRoot=V(s*0.44,0.01,-0.92),leTip=V(s*1.3,0.02,-0.74),teTip=V(s*1.16,-0.01,-1.06);
+    F(s>0?[leRoot,leTip,teTip,teRoot]:[leRoot,teRoot,teTip,leTip],'accent',true);};
+  wing(1);wing(-1);
+  const fRF=V(0,0.225,-0.44),fRB=V(0,0.2,-1.46),fTF=V(0,0.66,-0.92),fTT=V(0,0.78,-1.2);
+  F([fRF,fTF,fTT,fRB],'accent',true);
+  const nacAng=[30,90,150,210,270,330].map(a=>a*D);
+  const nacelle=cx=>{const r=0.155,y0=-0.03;
+    const fr=nacAng.map(a=>V(cx+r*Math.cos(a),y0+r*Math.sin(a),-1.28));
+    const bk=nacAng.map(a=>V(cx+r*Math.cos(a),y0+r*Math.sin(a),-2.06));
+    for(let i=0;i<6;i++)F([fr[i],fr[(i+1)%6],bk[(i+1)%6],bk[i]],'engine');
+    F([bk[0],bk[1],bk[2],bk[3],bk[4],bk[5]],'exhaust');};
+  nacelle(-0.285);nacelle(0.285);
+  return {verts,faces};
+}
+const MESH=buildRonin();
+const KEY=norm([0.5,0.85,0.35]);
+const boostFromBeta=b=>{b=clamp(b,0,1);return Math.min(1,0.08+Math.pow(b,0.8)*0.95);};
+
+// ----- state -----
+const S={beta:0.30, comp:120, hull:hex2rgb("#7a8898"), accent:hex2rgb("#d45846"),
+  yaw:208, pitch:-15, spin:true, edge:true, plume:true, drag:false, px:0, py:0, dist:6.2};
+
+// ----- renderer -----
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){
+  const r=cv.getBoundingClientRect(); DPR=Math.min(window.devicePixelRatio||1,2);
+  W=r.width; H=r.height; cv.width=W*DPR; cv.height=H*DPR;
+}
+addEventListener('resize',resize);
+
+function rotMat(yaw,pitch){
+  const cy=Math.cos(yaw*D),sy=Math.sin(yaw*D),cx=Math.cos(pitch*D),sx=Math.sin(pitch*D);
+  // R = Ry * Rx
+  return [
+    [cy, sy*sx, sy*cx],
+    [0,  cx,   -sx  ],
+    [-sy,cy*sx, cy*cx]
+  ];
+}
+const apply=(M,v)=>[M[0][0]*v[0]+M[0][1]*v[1]+M[0][2]*v[2],
+                    M[1][0]*v[0]+M[1][1]*v[1]+M[1][2]*v[2],
+                    M[2][0]*v[0]+M[2][1]*v[1]+M[2][2]*v[2]];
+const FOC=540;
+
+function frame(){
+  ctx.save(); ctx.scale(DPR,DPR);
+  // backdrop: faint radial vignette
+  const bg=ctx.createRadialGradient(W*0.5,H*0.46,0,W*0.5,H*0.46,Math.max(W,H)*0.7);
+  bg.addColorStop(0,'#0d1622'); bg.addColorStop(1,'#070b11');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  const boost=boostFromBeta(S.beta);
+  const M=rotMat(S.yaw,S.pitch);
+  const d=S.dist;
+  const world=MESH.verts.map(v=>apply(M,v));
+  const camScale=Math.min(W,H)/620; // fit model to viewport
+  const proj=p=>{ let zc=d-p[2]; if(zc<0.05)zc=0.05;
+    return {x:W/2 + FOC*camScale*p[0]/zc, y:H/2 - FOC*camScale*p[1]/zc, z:zc, ok:zc>0.06}; };
+  const P=world.map(proj);
+  const back=apply(M,[0,0,-1]); // ship aft in world
+
+  // build tris
+  const tris=[]; const nozzles=[];
+  for(const f of MESH.faces){
+    const name=ORDER[f.m], mat=MAT[name];
+    let base=mat.rgb;
+    if(name==='accent') base=S.accent;
+    else if(name==='hull') base=S.hull;
+    else if(name==='hullDark') base=[S.hull[0]*0.55,S.hull[1]*0.55,S.hull[2]*0.62];
+    if(name==='exhaust'){ let c=[0,0,0]; for(const vi of f.v){c[0]+=world[vi][0];c[1]+=world[vi][1];c[2]+=world[vi][2];}
+      nozzles.push([c[0]/f.v.length,c[1]/f.v.length,c[2]/f.v.length]); }
+    for(let k=1;k<f.v.length-1;k++){
+      const ia=f.v[0],ib=f.v[k],ic=f.v[k+1], pa=P[ia],pb=P[ib],pc=P[ic];
+      if(!pa.ok||!pb.ok||!pc.ok)continue;
+      const area=(pb.x-pa.x)*(pc.y-pa.y)-(pc.x-pa.x)*(pb.y-pa.y);
+      if(!f.two && area<=0)continue;
+      const A=world[ia],B=world[ib],C=world[ic];
+      let n=cross(sub(B,A),sub(C,A)); const nl=len(n); if(nl<1e-9)continue; n=[n[0]/nl,n[1]/nl,n[2]/nl];
+      let sh;
+      if(mat.e) sh = name==='exhaust' ? 0.4+1.25*boost : 1;
+      else { let dl=dot(n,KEY); if(f.two)dl=Math.abs(dl); sh=0.3+0.7*Math.max(0,dl); }
+      let col=[base[0]*sh,base[1]*sh,base[2]*sh];
+      if(name==='exhaust') col=whiten(col,0.5*boost);
+      const z=(pa.z+pb.z+pc.z)/3;
+      tris.push({z, a:pa,b:pb,c:pc, col});
+    }
+  }
+  tris.sort((x,y)=>y.z-x.z);
+  for(const t of tris){
+    ctx.beginPath(); ctx.moveTo(t.a.x,t.a.y); ctx.lineTo(t.b.x,t.b.y); ctx.lineTo(t.c.x,t.c.y); ctx.closePath();
+    ctx.fillStyle=`rgb(${clamp255(t.col[0])},${clamp255(t.col[1])},${clamp255(t.col[2])})`; ctx.fill();
+    if(S.edge){ ctx.strokeStyle='rgba(0,0,0,0.30)'; ctx.lineWidth=0.6; ctx.stroke(); }
+  }
+
+  // plumes (additive twin flames)
+  if(S.plume && boost>0.02 && nozzles.length){
+    const core=whiten([255,150,70],0.45*boost);
+    const plumeW=0.6+4.0*boost;
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    for(const c of nozzles){
+      const s0=proj(c); if(!s0.ok)continue;
+      const s1=proj([c[0]-back[0]*plumeW, c[1]-back[1]*plumeW, c[2]-back[2]*plumeW]);
+      const dx=s1.x-s0.x, dy=s1.y-s0.y, plen=Math.hypot(dx,dy)||1;
+      const r=clamp(FOC*camScale*0.17/Math.max(s0.z,0.5)*(1.0+1.7*boost),2.5,52);
+      // streak
+      const px=-dy/plen, py=dx/plen, w0=r*0.62, w1=r*0.14;
+      const lg=ctx.createLinearGradient(s0.x,s0.y,s1.x,s1.y);
+      lg.addColorStop(0,`rgba(${clamp255(core[0])},${clamp255(core[1])},${clamp255(core[2])},${0.5+0.4*boost})`);
+      lg.addColorStop(0.4,`rgba(255,150,70,${0.2+0.25*boost})`);
+      lg.addColorStop(1,'rgba(255,110,40,0)');
+      ctx.fillStyle=lg; ctx.beginPath();
+      ctx.moveTo(s0.x+px*w0,s0.y+py*w0); ctx.lineTo(s0.x-px*w0,s0.y-py*w0);
+      ctx.lineTo(s1.x-px*w1,s1.y-py*w1); ctx.lineTo(s1.x+px*w1,s1.y+py*w1); ctx.closePath(); ctx.fill();
+      // core glow
+      const g=ctx.createRadialGradient(s0.x,s0.y,0,s0.x,s0.y,r);
+      g.addColorStop(0,`rgba(${clamp255(core[0])},${clamp255(core[1])},${clamp255(core[2])},${0.4+0.5*boost})`);
+      g.addColorStop(0.45,`rgba(255,140,60,${0.16+0.3*boost})`);
+      g.addColorStop(1,'rgba(255,120,40,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(s0.x,s0.y,r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+
+  if(S.spin && !S.drag) S.yaw=(S.yaw+0.28)%360;
+  requestAnimationFrame(frame);
+}
+
+// ----- readouts -----
+const C_KMS=299792.458, LIGHT_S_PER_AU=149597870.7/299792.458;
+function fmtTime(s){ if(s<90)return s.toFixed(1)+' s'; if(s<5400)return (s/60).toFixed(1)+' min'; if(s<129600)return (s/3600).toFixed(1)+' hr'; return (s/86400).toFixed(2)+' days'; }
+function updateReadout(){
+  const boost=boostFromBeta(S.beta);
+  const kms=S.beta*C_KMS;
+  document.getElementById('rBeta').textContent=S.beta.toFixed(2)+' c';
+  document.getElementById('rKms').textContent=Math.round(kms).toLocaleString()+' km/s';
+  document.getElementById('rBoost').textContent=Math.round(boost*100)+'%';
+  document.getElementById('rComp').textContent='×'+S.comp;
+  // 1 AU traversal time at this compression = light-time/(beta*comp)
+  const t = S.beta>0 ? LIGHT_S_PER_AU/(S.beta*S.comp) : Infinity;
+  document.getElementById('rAu').textContent = isFinite(t)? fmtTime(t) : '∞';
+  document.getElementById('rNote').innerHTML =
+    'Physical speed is <b style="color:var(--soft)">β·c = '+Math.round(kms).toLocaleString()+' km/s</b> — always below light. '+
+    'The fast traversal is <b style="color:var(--soft)">time-compression ×'+S.comp+'</b> (the journey clock fast-forwards), '+
+    'not the ship breaking c. At ×1 it would be true light-time ('+fmtTime(LIGHT_S_PER_AU)+' per AU).';
+}
+
+// ----- controls -----
+const $=id=>document.getElementById(id);
+function syncBeta(){ $('vBeta').textContent=S.beta.toFixed(2)+' c'; $('sBeta').value=S.beta; updateReadout(); }
+function syncComp(){ $('vComp').textContent='×'+S.comp; updateReadout(); }
+$('sBeta').addEventListener('input',e=>{S.beta=parseFloat(e.target.value);syncBeta();});
+$('sComp').addEventListener('input',e=>{S.comp=parseInt(e.target.value);syncComp();});
+$('cHull').addEventListener('input',e=>{S.hull=hex2rgb(e.target.value);});
+$('cAccent').addEventListener('input',e=>{S.accent=hex2rgb(e.target.value);});
+$('bReset').addEventListener('click',()=>{ S.hull=hex2rgb("#7a8898"); S.accent=hex2rgb("#d45846");
+  $('cHull').value="#7a8898"; $('cAccent').value="#d45846"; });
+$('bRand').addEventListener('click',()=>{
+  const rnd=()=>'#'+Array.from({length:3},()=>('0'+Math.floor(40+Math.random()*200).toString(16)).slice(-2)).join('');
+  const h=rnd(),a=rnd(); S.hull=hex2rgb(h); S.accent=hex2rgb(a); $('cHull').value=h; $('cAccent').value=a; });
+function toggle(id,key){ const b=$(id); b.addEventListener('click',()=>{ S[key]=!S[key]; b.classList.toggle('on',S[key]); }); }
+toggle('bSpin','spin'); toggle('bEdge','edge'); toggle('bPlume','plume');
+
+// orbit drag + zoom
+function down(x,y){S.drag=true;S.px=x;S.py=y;}
+function move(x,y){ if(!S.drag)return; S.yaw=(S.yaw+(x-S.px)*0.4)%360; S.pitch=clamp(S.pitch-(y-S.py)*0.4,-80,80); S.px=x;S.py=y; }
+function up(){S.drag=false;}
+cv.addEventListener('mousedown',e=>down(e.clientX,e.clientY));
+addEventListener('mousemove',e=>move(e.clientX,e.clientY));
+addEventListener('mouseup',up);
+cv.addEventListener('touchstart',e=>{const t=e.touches[0];down(t.clientX,t.clientY);},{passive:true});
+cv.addEventListener('touchmove',e=>{const t=e.touches[0];move(t.clientX,t.clientY);e.preventDefault();},{passive:false});
+cv.addEventListener('touchend',up);
+cv.addEventListener('wheel',e=>{S.dist=clamp(S.dist+e.deltaY*0.004,3.6,12);e.preventDefault();},{passive:false});
+
+resize(); syncBeta(); syncComp(); updateReadout(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>

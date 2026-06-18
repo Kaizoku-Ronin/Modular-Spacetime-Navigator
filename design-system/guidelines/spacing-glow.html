@@ -1,0 +1,22 @@
+<!-- @dsCard group="Spacing" viewport="700x170" name="Glow & depth" subtitle="Depth = colored glow, never grey shadow. Status dots, thumbs, jump halo." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--void); padding: 28px; font-family: var(--font-mono); display:flex; gap: 40px; align-items:center; }
+  .sw { display:flex; flex-direction:column; gap:14px; align-items:center; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .name { font-size: 9px; color: var(--ink-dim); letter-spacing: 0.04em; text-align:center; }
+  .jump { width: 28px; height: 28px; border-radius: 50%; background: var(--violet); animation: msn-pulse-glow 1.6s infinite; }
+  .pulse { animation: msn-pulse 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+  <div class="sw"><span class="dot pulse" style="background:var(--teal);box-shadow:var(--glow-teal)"></span><span class="name">teal · pulse<br>0 0 8px</span></div>
+  <div class="sw"><span class="dot" style="background:var(--warn);box-shadow:var(--glow-warn)"></span><span class="name">warn glow</span></div>
+  <div class="sw"><span class="jump"></span><span class="name">jump · pulse-glow<br>expanding halo</span></div>
+  <div class="sw" style="margin-left:8px"><div style="width:140px;height:4px;border-radius:3px;background:linear-gradient(90deg,var(--teal-deep),var(--teal))"></div><span class="name">slider track gauge</span></div>
+</body>
+</html>

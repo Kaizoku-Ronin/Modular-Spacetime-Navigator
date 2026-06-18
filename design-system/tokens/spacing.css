@@ -1,0 +1,32 @@
+/* ============================================================
+   MSN — Spacing & layout tokens
+   The six-step spacing scale used across the simulator HUD and
+   the lore page (xs … 3xl), plus z-index layers for the fixed
+   overlay stack.
+   ============================================================ */
+
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 100px;
+
+  /* HUD panels pad tight; lore sections breathe (3xl vertical). */
+  --pad-panel: 14px 16px;
+  --pad-control: 8px 12px;
+  --pad-section: var(--space-3xl) var(--space-xl);
+
+  /* Max content widths (lore page) */
+  --width-prose: 1100px;
+  --width-wide: 1200px;
+  --width-narrow: 560px;
+
+  /* Z-index stack for the fixed overlay HUD */
+  --z-hud: 20;    /* @kind other */
+  --z-panel: 30;  /* @kind other */
+  --z-dock: 40;   /* @kind other */
+  --z-nav: 50;    /* @kind other */
+}

@@ -1,0 +1,92 @@
+<!-- @dsCard group="Components" viewport="700x620" name="Core HUD primitives" subtitle="Button, HudPanel, DataRow, Badge, ModePill, StatusLine, SpectralBadge, Slider" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; background: var(--void); padding: 26px; font-family: var(--font-mono); color: var(--ink); }
+  .sec { font-size: 9px; color: var(--ink-dim); letter-spacing: var(--track-wide); text-transform: uppercase; margin: 0 0 12px; }
+  .block { margin-bottom: 26px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .cols { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { Button, HudPanel, DataRow, Badge, ModePill, StatusLine, SpectralBadge, Slider } = window.MSNDesignSystem_6270fe;
+
+  function Demo() {
+    const [beta, setBeta] = React.useState(0.2);
+    return (
+      <div>
+        <div className="block">
+          <p className="sec">Button — tones · ghost · pulse · disabled</p>
+          <div className="row">
+            <Button tone="teal" icon="▶">Align</Button>
+            <Button tone="violet" pulse icon="⇒">Hyperjump</Button>
+            <Button tone="warn" variant="ghost">Flight</Button>
+            <Button tone="teal" variant="ghost" size="sm">Cruise</Button>
+            <Button tone="alert" size="sm">Reset</Button>
+            <Button tone="teal" disabled>Disabled</Button>
+          </div>
+        </div>
+
+        <div className="block">
+          <p className="sec">ModePill · Badge · SpectralBadge</p>
+          <div className="row">
+            <ModePill mode="flight" />
+            <ModePill mode="starmap" />
+            <Badge tone="teal">Cruise</Badge>
+            <Badge tone="violet" pill>105 lanes</Badge>
+            <Badge tone="dim" outline={false}>HYG</Badge>
+            <SpectralBadge type="G2V" />
+            <SpectralBadge type="M5.5V" />
+            <SpectralBadge type="DA" />
+          </div>
+        </div>
+
+        <div className="block">
+          <p className="sec">Slider — fill-gauge track</p>
+          <div className="row">
+            <Slider label="cruise" min={0.001} max={0.2} step={0.001}
+              value={beta} onChange={setBeta} displayValue={`${beta.toFixed(3)} c`} />
+            <Slider label="size" tone="warn" min={1} max={50} step={1}
+              value={12} onChange={()=>{}} displayValue="12x" width={120} />
+          </div>
+        </div>
+
+        <div className="cols">
+          <div style={{ minWidth: 232 }}>
+            <p className="sec">HudPanel + DataRow + StatusLine</p>
+            <HudPanel title="Sol System" dot tag="CRUISE">
+              <DataRow label="Distance" value="0.605 AU" />
+              <DataRow label="Velocity" value="0.200 c" />
+              <DataRow label="Lorentz γ" value="7.09" />
+              <DataRow label="Aboard" value="00:01:12" valueColor="#9fd0cb" divider={false} />
+              <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid rgba(70,224,210,0.12)' }}>
+                <StatusLine status="cruising" />
+              </div>
+            </HudPanel>
+          </div>
+          <div style={{ minWidth: 232 }}>
+            <p className="sec">Status states</p>
+            <HudPanel blur="dock" style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <StatusLine status="cruising" />
+              <StatusLine status="paused" />
+              <StatusLine status="near-horizon" />
+            </HudPanel>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

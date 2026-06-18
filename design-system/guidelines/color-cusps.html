@@ -1,0 +1,33 @@
+<!-- @dsCard group="Colors" viewport="700x190" name="The four cusps of D(143)" subtitle="Thematic accent ramp — Planck → stellar → galactic → cosmological" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--void); font-family: var(--font-mono); padding: 22px; }
+  .row { display: flex; gap: 0; border-radius: var(--radius-sm); overflow: hidden; border: var(--border-hud-line); }
+  .cusp { flex: 1; height: 80px; display:flex; flex-direction:column; justify-content:flex-end; padding: 10px; box-sizing: border-box; }
+  .w { font-size: 18px; font-weight: 700; }
+  .legend { display:flex; gap: 24px; margin-top: 16px; }
+  .li { display:flex; flex-direction:column; }
+  .name { font-size: 10px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink); }
+  .hex { font-size: 9px; color: var(--ink-dim); }
+  .lbl { font-size: 9px; color: var(--ink-dim); letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="cusp" style="background:rgba(255,95,158,.16)"><span class="w" style="color:var(--cusp-planck)">1</span></div>
+    <div class="cusp" style="background:rgba(184,107,255,.16)"><span class="w" style="color:var(--cusp-stellar)">11</span></div>
+    <div class="cusp" style="background:rgba(77,182,232,.16)"><span class="w" style="color:var(--cusp-galactic)">13</span></div>
+    <div class="cusp" style="background:rgba(74,108,240,.16)"><span class="w" style="color:var(--cusp-cosmological)">143</span></div>
+  </div>
+  <div class="legend">
+    <div class="li"><span class="name" style="color:var(--cusp-planck)">Planck</span><span class="hex">#ff5f9e</span></div>
+    <div class="li"><span class="name" style="color:var(--cusp-stellar)">Stellar</span><span class="hex">#b86bff</span></div>
+    <div class="li"><span class="name" style="color:var(--cusp-galactic)">Galactic</span><span class="hex">#4db6e8</span></div>
+    <div class="li"><span class="name" style="color:var(--cusp-cosmological)">Cosmological</span><span class="hex">#4a6cf0</span></div>
+  </div>
+</body>
+</html>

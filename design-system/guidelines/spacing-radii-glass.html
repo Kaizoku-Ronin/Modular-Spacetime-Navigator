@@ -1,0 +1,33 @@
+<!-- @dsCard group="Spacing" viewport="700x190" name="Radii & instrument glass" subtitle="Small radii (4 → 20px) + the frosted-glass panel with a single teal hairline" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--void); padding: 24px; font-family: var(--font-mono); display:flex; gap: 22px; align-items: center; }
+  .col { display:flex; gap: 14px; }
+  .sw { display:flex; flex-direction:column; gap:8px; align-items:center; }
+  .box { width: 60px; height: 50px; background: var(--teal-12); border: var(--border-hud-line); }
+  .name { font-size: 9px; color: var(--ink-dim); letter-spacing: 0.04em; }
+  .glass { width: 200px; padding: 16px; background: var(--panel); border: var(--border-hud-line); border-radius: var(--radius-sm); backdrop-filter: var(--blur-hud); }
+  .glass .t { font-size: 9px; color: var(--ink-dim); letter-spacing: var(--track-wide); text-transform:uppercase; }
+  .glass .v { font-size: 13px; color: var(--teal); margin-top: 6px; }
+  .sep { width: 1px; height: 90px; background: var(--hair); }
+</style>
+</head>
+<body>
+  <div class="col">
+    <div class="sw"><div class="box" style="border-radius:var(--radius-sm)"></div><span class="name">sm · 4</span></div>
+    <div class="sw"><div class="box" style="border-radius:var(--radius-md)"></div><span class="name">md · 6</span></div>
+    <div class="sw"><div class="box" style="border-radius:var(--radius)"></div><span class="name">base · 8</span></div>
+    <div class="sw"><div class="box" style="border-radius:var(--radius-lg)"></div><span class="name">lg · 12</span></div>
+    <div class="sw"><div class="box" style="border-radius:var(--radius-pill)"></div><span class="name">pill · 20</span></div>
+  </div>
+  <div class="sep"></div>
+  <div class="glass">
+    <div class="t">Glass panel · blur 4px</div>
+    <div class="v">rgba(6,12,18,.72)</div>
+  </div>
+</body>
+</html>

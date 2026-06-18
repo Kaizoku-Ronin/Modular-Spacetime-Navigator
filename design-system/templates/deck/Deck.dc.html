@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="MSN Deck" description="Branded slide deck — instrument-glass slides on the void, mono telemetry voice, four-cusp accents" -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>
+  html, body { margin: 0; background: #03050a; }
+  @keyframes deckRingCW { to { transform: rotate(360deg); } }
+  @keyframes deckRingCCW { to { transform: rotate(-360deg); } }
+</style>
+</helmet>
+
+<div id="msn-deck-viewport" style="position:fixed; inset:0; background:#03050a; display:flex; align-items:center; justify-content:center; overflow:hidden; font-family:'Inter', system-ui, sans-serif;">
+  <div id="msn-deck-scaler" style="width:1280px; height:720px; overflow:hidden; position:relative; transform-origin:center center;">
+    <div id="msn-deck-track" style="display:flex; width:1280px; height:720px; transition:transform 0.5s cubic-bezier(0.16,1,0.3,1); transform: translateX(0px);">
+
+      <!-- 1 · TITLE -->
+      <section data-screen-label="01" style="flex:none; width:1280px; height:720px; box-sizing:border-box; padding:96px; display:flex; flex-direction:column; justify-content:center; position:relative; background:radial-gradient(circle at 70% 40%, rgba(18,40,60,0.35), #03050a 70%);">
+        <svg viewBox="0 0 200 200" style="position:absolute; top:96px; right:96px; width:120px; height:120px; overflow:visible;">
+          <g style="transform-origin:50% 50%; animation:deckRingCW 20s linear infinite;"><circle cx="100" cy="100" r="84" fill="none" stroke="#46e0d2" stroke-width="1" opacity="0.6" stroke-dasharray="8 5"/></g>
+          <g style="transform-origin:50% 50%; animation:deckRingCCW 13s linear infinite;"><circle cx="100" cy="100" r="52" fill="none" stroke="#ffb648" stroke-width="1" opacity="0.5" stroke-dasharray="6 4"/></g>
+          <g style="transform-origin:50% 50%; animation:deckRingCW 11s linear infinite;"><circle cx="100" cy="100" r="28" fill="none" stroke="#46e0d2" stroke-width="1" opacity="0.7"/></g>
+          <circle cx="100" cy="100" r="6" fill="#9b59ff" opacity="0.9"/>
+        </svg>
+        <div style="font-family:'JetBrains Mono', monospace; font-size:14px; color:#46e0d2; letter-spacing:0.18em; text-transform:uppercase; margin-bottom:32px;">X₀(143) · Modular Curve Theory</div>
+        <h1 style="font-family:'Space Grotesk', sans-serif; font-size:96px; font-weight:700; color:#cfe7e6; letter-spacing:-0.03em; line-height:0.98; margin:0;">The Mathematics<br>of Spacetime</h1>
+        <p style="font-weight:300; font-size:22px; color:#5f7e7d; max-width:620px; line-height:1.6; margin:32px 0 0;">A modular curve at the heart of every star. Four cusps, sixty real stars, one hundred and five hyperspace lanes.</p>
+      </section>
+
+      <!-- 2 · SECTION DIVIDER -->
+      <section data-screen-label="02" style="flex:none; width:1280px; height:720px; box-sizing:border-box; padding:96px; display:flex; flex-direction:column; justify-content:center; background:#050b12; border-left:3px solid #46e0d2;">
+        <div style="font-family:'JetBrains Mono', monospace; font-size:13px; color:#5f7e7d; letter-spacing:0.16em; text-transform:uppercase; margin-bottom:24px;">Section 01 · Foundations</div>
+        <h2 style="font-family:'Space Grotesk', sans-serif; font-size:72px; font-weight:700; color:#cfe7e6; letter-spacing:-0.02em; line-height:1.04; margin:0; max-width:900px;">The four cusps of D(143)</h2>
+      </section>
+
+      <!-- 3 · CONTENT + GLASS PANEL -->
+      <section data-screen-label="03" style="flex:none; width:1280px; height:720px; box-sizing:border-box; padding:96px; display:flex; gap:64px; align-items:center;">
+        <div style="flex:1;">
+          <div style="font-family:'JetBrains Mono', monospace; font-size:13px; color:#46e0d2; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:20px;">Physics of the simulator</div>
+          <h2 style="font-family:'Space Grotesk', sans-serif; font-size:46px; font-weight:700; color:#cfe7e6; letter-spacing:-0.02em; line-height:1.1; margin:0 0 28px;">Special relativity, exact</h2>
+          <p style="font-weight:300; font-size:21px; color:#cfe7e6; line-height:1.7; margin:0;">As your velocity approaches light speed, stars crowd in front of you, blueshift ahead and redshift behind. The clock aboard runs slow — and the drift accumulates across every flight.</p>
+        </div>
+        <div style="flex:none; width:380px; background:rgba(6,12,18,0.72); border:1px solid rgba(70,224,210,0.18); border-radius:4px; padding:28px; backdrop-filter:blur(4px); font-family:'JetBrains Mono', monospace;">
+          <div style="font-size:11px; color:#5f7e7d; letter-spacing:0.14em; text-transform:uppercase; padding-bottom:14px; border-bottom:1px solid rgba(70,224,210,0.12); margin-bottom:14px;">Sol System · Cruise</div>
+          <div style="display:flex; justify-content:space-between; padding:7px 0; font-size:15px;"><span style="color:#5f7e7d; text-transform:uppercase; letter-spacing:0.1em; font-size:12px;">Velocity</span><span style="color:#46e0d2;">0.200 c</span></div>
+          <div style="display:flex; justify-content:space-between; padding:7px 0; font-size:15px;"><span style="color:#5f7e7d; text-transform:uppercase; letter-spacing:0.1em; font-size:12px;">Lorentz γ</span><span style="color:#46e0d2;">7.09</span></div>
+          <div style="display:flex; justify-content:space-between; padding:7px 0; font-size:15px;"><span style="color:#5f7e7d; text-transform:uppercase; letter-spacing:0.1em; font-size:12px;">Aboard</span><span style="color:#46e0d2;">00:01:12</span></div>
+        </div>
+      </section>
+
+      <!-- 4 · BIG STAT -->
+      <section data-screen-label="04" style="flex:none; width:1280px; height:720px; box-sizing:border-box; padding:96px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:#050b12;">
+        <div style="font-family:'Space Grotesk', sans-serif; font-size:200px; font-weight:700; color:#46e0d2; line-height:0.9; letter-spacing:-0.04em;">105</div>
+        <div style="font-family:'JetBrains Mono', monospace; font-size:16px; color:#5f7e7d; letter-spacing:0.16em; text-transform:uppercase; margin-top:24px;">Hyperspace lanes · 60 systems · 20 ly</div>
+      </section>
+
+      <!-- 5 · QUOTE / CLOSING -->
+      <section data-screen-label="05" style="flex:none; width:1280px; height:720px; box-sizing:border-box; padding:120px 96px; display:flex; flex-direction:column; justify-content:center;">
+        <div style="font-family:'Space Grotesk', sans-serif; font-size:54px; font-weight:700; color:#cfe7e6; letter-spacing:-0.02em; line-height:1.2; max-width:980px;">“The planets read as faint dots until you fly close — <span style="color:#46e0d2;">the emptiness is the point.</span>”</div>
+        <div style="font-family:'JetBrains Mono', monospace; font-size:14px; color:#5f7e7d; letter-spacing:0.1em; text-transform:uppercase; margin-top:40px;">Modular Spacetime Navigator</div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Controls (outside the scaled stage) -->
+  <div style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:40; display:flex; align-items:center; gap:14px; background:rgba(6,12,18,0.72); border:1px solid rgba(70,224,210,0.18); border-radius:12px; padding:8px 14px; backdrop-filter:blur(12px); font-family:'JetBrains Mono', monospace;">
+    <button onClick="{{ prev }}" style="appearance:none; border:1px solid rgba(70,224,210,0.3); background:rgba(70,224,210,0.12); color:#46e0d2; width:34px; height:30px; border-radius:6px; cursor:pointer; font-size:14px;">←</button>
+    <span style="font-size:12px; color:#cfe7e6; letter-spacing:0.1em; min-width:54px; text-align:center; font-variant-numeric:tabular-nums;">{{ label }}</span>
+    <button onClick="{{ next }}" style="appearance:none; border:1px solid rgba(70,224,210,0.3); background:rgba(70,224,210,0.12); color:#46e0d2; width:34px; height:30px; border-radius:6px; cursor:pointer; font-size:14px;">→</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { i: 0 };
+  total = 5;
+
+  componentDidMount() {
+    this._fit = () => {
+      const el = document.getElementById('msn-deck-scaler');
+      if (!el) return;
+      const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+      el.style.transform = `scale(${s})`;
+    };
+    this._fit();
+    window.addEventListener('resize', this._fit);
+    this._key = (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); this.go(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); this.go(-1); }
+    };
+    window.addEventListener('keydown', this._key);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._fit);
+    window.removeEventListener('keydown', this._key);
+  }
+  go(d) {
+    this.setState(
+      (s) => ({ i: Math.max(0, Math.min(this.total - 1, s.i + d)) }),
+      () => this._slide()
+    );
+  }
+  _slide() {
+    const t = document.getElementById('msn-deck-track');
+    if (t) t.style.transform = `translateX(${-this.state.i * 1280}px)`;
+  }
+  renderVals() {
+    const i = this.state.i;
+    return {
+      label: `${String(i + 1).padStart(2, '0')} / ${String(this.total).padStart(2, '0')}`,
+      next: () => this.go(1),
+      prev: () => this.go(-1),
+    };
+  }
+}
+</script>
+</body>
+</html>

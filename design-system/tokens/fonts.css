@@ -1,0 +1,12 @@
+/* ============================================================
+   MSN — Webfonts
+   Three families, loaded from Google Fonts (exactly the weights
+   the simulator imports). No font binaries are vendored; if you
+   need offline use, self-host these and swap the @import for
+   @font-face rules.
+     · Space Grotesk — display / headings        (500, 700)
+     · Inter         — body / running prose       (300, 400, 500)
+     · JetBrains Mono— telemetry, labels, data    (400, 700)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap');

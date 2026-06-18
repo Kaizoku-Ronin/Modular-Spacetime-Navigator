@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x180" name="Spectral type ramp" subtitle="Stars colored by class — O/B blue through M red, plus white dwarf" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--void); font-family: var(--font-mono); padding: 22px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sw { display:flex; flex-direction:column; align-items:center; gap: 8px; }
+  .star { width: 56px; height: 56px; border-radius: 50%; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-sm); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="sw"><div class="star" style="background:var(--spectral-ob);box-shadow:0 0 16px var(--spectral-ob)"></div><span class="badge" style="color:var(--spectral-ob);background:rgba(90,124,255,.15)">O / B</span></div>
+    <div class="sw"><div class="star" style="background:var(--spectral-a);box-shadow:0 0 16px var(--spectral-a)"></div><span class="badge" style="color:var(--spectral-a);background:rgba(138,164,255,.15)">A</span></div>
+    <div class="sw"><div class="star" style="background:var(--spectral-f);box-shadow:0 0 16px var(--spectral-f)"></div><span class="badge" style="color:var(--spectral-f);background:rgba(255,245,224,.15)">F</span></div>
+    <div class="sw"><div class="star" style="background:var(--spectral-g);box-shadow:0 0 16px var(--spectral-g)"></div><span class="badge" style="color:var(--spectral-g);background:rgba(255,232,138,.15)">G · Sol</span></div>
+    <div class="sw"><div class="star" style="background:var(--spectral-k);box-shadow:0 0 16px var(--spectral-k)"></div><span class="badge" style="color:var(--spectral-k);background:rgba(255,170,68,.15)">K</span></div>
+    <div class="sw"><div class="star" style="background:var(--spectral-m);box-shadow:0 0 16px var(--spectral-m)"></div><span class="badge" style="color:var(--spectral-m);background:rgba(255,102,34,.15)">M</span></div>
+    <div class="sw"><div class="star" style="background:var(--spectral-lty);box-shadow:0 0 12px var(--spectral-lty)"></div><span class="badge" style="color:#9a7a6a;background:rgba(68,17,0,.4)">L/T/Y</span></div>
+    <div class="sw"><div class="star" style="background:var(--spectral-wd);box-shadow:0 0 16px var(--spectral-wd)"></div><span class="badge" style="color:var(--spectral-wd);background:rgba(192,216,255,.15)">WD</span></div>
+  </div>
+</body>
+</html>

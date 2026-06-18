@@ -1,0 +1,55 @@
+/* ============================================================
+   MSN — Typography tokens
+   A three-voice system:
+     · Space Grotesk  — display & headings. Tight tracking, weight 700.
+     · Inter          — body prose, light (300) for the airy lore voice.
+     · JetBrains Mono — the HUD voice. UPPERCASE, wide tracking, tabular
+                        numerals. Every label, badge, and telemetry value.
+   ============================================================ */
+
+:root {
+  /* ---- Families ---- */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* ---- Weights ---- */
+  --weight-light: 300;     /* Inter body — the default lore prose weight */
+  --weight-regular: 400;
+  --weight-medium: 500;    /* Space Grotesk headings, mode labels */
+  --weight-bold: 700;      /* display titles, mono emphasis */
+
+  /* ---- Display scale (Space Grotesk) ---- */
+  --text-hero: clamp(40px, 8vw, 96px);   /* lore hero */
+  --text-display: clamp(28px, 4vw, 48px);/* section headings */
+  --text-stat: clamp(48px, 8vw, 80px);   /* animated counters */
+  --text-h2: 20px;                       /* panel titles */
+  --text-h3: 16px;
+
+  /* ---- Body (Inter) ---- */
+  --text-lead: clamp(14px, 2vw, 20px);   /* hero subtitle */
+  --text-body: 16px;
+  --text-body-sm: 14px;
+  --text-caption: 12px;
+
+  /* ---- Mono / HUD scale (JetBrains Mono) ---- */
+  --text-value-lg: 13px;   /* primary readout values */
+  --text-value: 12px;      /* data values */
+  --text-mono: 11px;       /* default mono / pills */
+  --text-label: 9.5px;     /* uppercase data labels */
+  --text-micro: 8px;       /* badge text */
+
+  /* ---- Tracking (letter-spacing) ---- */
+  --track-display: -0.03em; /* tight on big display */
+  --track-tight: -0.01em;
+  --track-normal: 0.02em;
+  --track-label: 0.06em;    /* mono labels */
+  --track-wide: 0.1em;      /* mode labels, overlines */
+  --track-wider: 0.14em;    /* micro badges / system tags */
+
+  /* ---- Line height ---- */
+  --leading-tight: 1.0;     /* display */
+  --leading-snug: 1.2;
+  --leading-hud: 1.6;       /* HUD rows */
+  --leading-body: 1.7;      /* lore prose */
+}
