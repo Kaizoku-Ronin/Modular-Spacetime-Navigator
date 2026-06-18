@@ -71,6 +71,10 @@
     -webkit-user-select: none;
     user-select: none;
     touch-action: none;
+    /* Stop in-app browsers (Instagram/FB webview) from auto-inflating text,
+       which was blowing up the HUD and colliding the corner panels. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   #root {
@@ -202,20 +206,17 @@
   cursor: pointer;
 }
 
-/* ---- Mobile: shrink the corner HUD panels so they fit small screens ---- */
-@media (max-width: 640px) {
-  .hud-panel {
-    transform: scale(0.78);
-    transform-origin: top left;
-  }
-  .chrono-panel {
-    transform: scale(0.78);
-    transform-origin: top right;
-  }
+/* ---- Corner HUD panels: scale continuously so the two top panels always fit
+   and never collide, regardless of the (sometimes wrong) layout-viewport width
+   an in-app browser reports. --hud-scale is computed from visualViewport in JS
+   (1 on desktop, shrinking on small screens). ---- */
+.hud-panel {
+  transform: scale(var(--hud-scale, 1));
+  transform-origin: top left;
+  will-change: transform;
 }
-@media (max-width: 380px) {
-  .hud-panel,
-  .chrono-panel {
-    transform: scale(0.68);
-  }
+.chrono-panel {
+  transform: scale(var(--hud-scale, 1));
+  transform-origin: top right;
+  will-change: transform;
 }

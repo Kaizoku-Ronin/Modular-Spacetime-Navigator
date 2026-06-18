@@ -209,12 +209,24 @@ export function SimulatorPage() {
     canvas.style.height = h + 'px';
     resizeFlight(flightRef.current, w, h);
     resizeStarmap(starmapRef.current, w, h);
+
+    // HUD corner-panel scale from the REAL visible width (visualViewport), so it
+    // holds up in in-app browsers whose layout-viewport width disagrees with
+    // what's actually on screen. 1 on desktop; shrinks (floor 0.55) on phones.
+    const vw = window.visualViewport?.width ?? w;
+    const hudScale = Math.max(0.55, Math.min(1, (vw - 56) / 460));
+    document.documentElement.style.setProperty('--hud-scale', hudScale.toFixed(3));
   }, []);
 
   useEffect(() => {
     resize();
     window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', resize);
+    return () => {
+      window.removeEventListener('resize', resize);
+      vv?.removeEventListener('resize', resize);
+    };
   }, [resize]);
 
   // Main render loop

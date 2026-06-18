@@ -6,6 +6,7 @@
 // Planet size slider: 1x — 50x (only in Sol system)
 // ============================================================
 
+import { useState } from 'react';
 import { useAppState } from './Layout';
 import type { ShipColor } from './Layout';
 import { MIN_TIME_COMPRESSION, MAX_TIME_COMPRESSION } from '../lib/physics';
@@ -23,7 +24,8 @@ const hex2rgb = (h: string): ShipColor => [
   parseInt(h.slice(5, 7), 16),
 ];
 
-const SOL_BODIES = ['Sun', 'Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune'];
+const SOL_PLANETS = ['Sun', 'Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune'];
+const SOL_DWARFS = ['Ceres', 'Pluto', 'Haumea', 'Makemake', 'Eris', 'Sedna'];
 
 export function FlightControls() {
   const {
@@ -42,6 +44,10 @@ export function FlightControls() {
 
   const isSol = currentStar?.name === 'Sol';
   const cfg = SPEED_CONFIG[speedMode];
+
+  // Planets panel (scale slider + body chips) collapses by default so the
+  // bottom HUD stays out of the way; the current scale shows in the header.
+  const [planetsOpen, setPlanetsOpen] = useState(false);
 
   // Clamp beta when switching modes
   const handleModeSwitch = (mode: 'cruise' | 'flight') => {
@@ -266,80 +272,91 @@ export function FlightControls() {
         <ColorSwatch title="Accent — wings / fin" value={rgb2hex(shipAccent)} onChange={(h) => setShipAccent(hex2rgb(h))} />
       </div>
 
-      {/* Planet scale slider (Sol system only) */}
+      {/* Planets panel — scale slider + hypojump chips, collapsible to keep the
+          bottom HUD from blocking the view. Collapsed by default. */}
       {isSol && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '9px',
-            background: 'rgba(6,12,18,0.72)',
-            border: '1px solid rgba(70,224,210,0.18)',
-            borderRadius: '6px',
-            padding: '6px 12px',
-            backdropFilter: 'blur(4px)',
-            fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-          }}
-        >
-          <label
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+          <button
+            onClick={() => setPlanetsOpen((o) => !o)}
+            aria-expanded={planetsOpen}
+            aria-label={planetsOpen ? 'Collapse planets panel' : 'Expand planets panel'}
             style={{
-              fontSize: '9.5px',
-              letterSpacing: '0.12em',
-              color: '#5f7e7d',
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(6,12,18,0.72)',
+              border: '1px solid rgba(70,224,210,0.18)',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              backdropFilter: 'blur(4px)',
+              fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+              cursor: 'pointer',
             }}
           >
-            planets
-          </label>
-          <input
-            type="range"
-            min={1}
-            max={50}
-            step={1}
-            value={planetScale}
-            onChange={(e) => setPlanetScale(parseInt(e.target.value))}
-            aria-label="Planet visual scale"
-            style={{ width: '120px' }}
-          />
-          <span
-            style={{
-              fontSize: '11px',
-              color: '#46e0d2',
-              minWidth: '36px',
-              textAlign: 'right',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {planetScale}x
-          </span>
-        </div>
-      )}
-
-      {/* In-system hypojump (Sol only); star-to-star hyperjump is separate */}
-      {isSol && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px', maxWidth: '430px' }}>
-          {SOL_BODIES.map((b) => (
-            <button
-              key={b}
-              onClick={() => setHypojumpTarget(b)}
-              title={`Hypojump to ${b}`}
+            <span style={{ fontSize: '9.5px', letterSpacing: '0.12em', color: '#5f7e7d', textTransform: 'uppercase' }}>
+              planets
+            </span>
+            <span style={{ fontSize: '11px', color: '#46e0d2', fontVariantNumeric: 'tabular-nums' }}>{planetScale}x</span>
+            <span
+              aria-hidden
               style={{
-                fontFamily: '"JetBrains Mono", ui-monospace, monospace',
                 fontSize: '10px',
-                letterSpacing: '0.04em',
-                color: '#9fd0cb',
-                background: 'rgba(6,12,18,0.72)',
-                border: '1px solid rgba(70,224,210,0.22)',
-                borderRadius: '5px',
-                padding: '4px 9px',
-                cursor: 'pointer',
-                backdropFilter: 'blur(4px)',
+                color: '#5f7e7d',
+                transform: planetsOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s var(--ease-ui, ease)',
               }}
             >
-              {b}
-            </button>
-          ))}
+              &#9662;
+            </span>
+          </button>
+
+          {planetsOpen && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(6,12,18,0.72)',
+                border: '1px solid rgba(70,224,210,0.18)',
+                borderRadius: '6px',
+                padding: '9px 12px',
+                backdropFilter: 'blur(4px)',
+                fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+                maxWidth: 'calc(100vw - 24px)',
+              }}
+            >
+              {/* size slider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                <label style={{ fontSize: '9.5px', letterSpacing: '0.12em', color: '#5f7e7d', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                  size
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={planetScale}
+                  onChange={(e) => setPlanetScale(parseInt(e.target.value))}
+                  aria-label="Planet visual scale"
+                  style={{ width: '120px' }}
+                />
+                <span style={{ fontSize: '11px', color: '#46e0d2', minWidth: '36px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  {planetScale}x
+                </span>
+              </div>
+
+              {/* hypojump targets — planets, then dwarf planets */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px', maxWidth: '440px' }}>
+                {SOL_PLANETS.map((b) => (
+                  <BodyChip key={b} name={b} onClick={() => setHypojumpTarget(b)} />
+                ))}
+                {SOL_DWARFS.map((b) => (
+                  <BodyChip key={b} name={b} dwarf onClick={() => setHypojumpTarget(b)} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -365,6 +382,29 @@ export function FlightControls() {
         </button>
       )}
     </div>
+  );
+}
+
+function BodyChip({ name, dwarf, onClick }: { name: string; dwarf?: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={`Hypojump to ${name}${dwarf ? ' (dwarf planet)' : ''}`}
+      style={{
+        fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+        fontSize: '10px',
+        letterSpacing: '0.04em',
+        color: dwarf ? '#a9a2c8' : '#9fd0cb',
+        background: 'rgba(6,12,18,0.72)',
+        border: `1px solid ${dwarf ? 'rgba(155,140,210,0.30)' : 'rgba(70,224,210,0.22)'}`,
+        borderRadius: '5px',
+        padding: '4px 9px',
+        cursor: 'pointer',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
+      {name}
+    </button>
   );
 }
 
