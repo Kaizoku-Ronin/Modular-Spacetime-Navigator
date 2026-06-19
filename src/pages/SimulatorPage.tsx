@@ -15,7 +15,7 @@ import { JumpOverlay } from '../components/JumpOverlay';
 import { createFlightState, initFlightState, resize as resizeFlight, resetFlight, spawnStandoff, renderFlight, stepFlight, getFlightHUD, yaw, pitch, aimFlightAt, levelToEclipticNorth } from '../canvas/flightRenderer';
 import { createStarmapState, resizeStarmap, renderStarmap, updateStarmap, findStarAtMouse, findLaneAtMouse, getStarmapHUD } from '../canvas/starmapRenderer';
 import { createJumpState, resetJump, renderJump, updateJump, isJumpComplete, getJumpProgress } from '../canvas/jumpRenderer';
-import { createSolarState, renderSolarSystem, applyPlanetGravity, getSolarHUD } from '../canvas/solarRenderer';
+import { createSolarState, renderSolarSystem, applyPlanetGravity, buildBelts, getSolarHUD } from '../canvas/solarRenderer';
 import type { SolarState } from '../canvas/solarRenderer';
 import { buildSolarSystem, julianDate, updateSolarPositions } from '../data/solarSystem';
 import type { Planet } from '../data/solarSystem';
@@ -75,6 +75,7 @@ export function SimulatorPage() {
     setStars,
     speedMode,
     planetScale,
+    beltDensity,
     timeScale,
     hypojumpTarget,
     setHypojumpTarget,
@@ -131,6 +132,11 @@ export function SimulatorPage() {
         planetsRef.current = planets;
         solarRef.current.planets = planets;
         solarRef.current.epochJD = julianDate(now);
+        if (!solarRef.current.beltMain) {
+          const belts = buildBelts();
+          solarRef.current.beltMain = belts.main;
+          solarRef.current.beltKuiper = belts.kuiper;
+        }
         solarRef.current.initialized = true;
       } else {
         solarRef.current.initialized = false;
@@ -319,7 +325,7 @@ export function SimulatorPage() {
           // Scene (draws from fs.cam — now the chase cam in third-person)
           if (fs.isSolar) {
             renderFlight(ctx!, fs, (ctx2, s) => {
-              renderSolarSystem(ctx2, s, solarRef.current, planetScale, dt);
+              renderSolarSystem(ctx2, s, solarRef.current, planetScale, dt, beltDensity);
             });
             setHudData(getSolarHUD(fs, solarRef.current));
           } else {
@@ -407,7 +413,7 @@ export function SimulatorPage() {
 
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [appMode, stars, lanes, jumpTarget, setCurrentStar, setAppMode, setJumpTarget, planetScale, speedMode]);
+  }, [appMode, stars, lanes, jumpTarget, setCurrentStar, setAppMode, setJumpTarget, planetScale, beltDensity, speedMode]);
 
   // Keyboard controls
   useEffect(() => {

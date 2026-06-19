@@ -21,6 +21,8 @@ export interface SolarState {
   sway: number[];
   focusBody?: string | null; // last hypojumped body, for the compass
   epochJD?: number; // Julian Date captured on Sol entry; live positions advance from here
+  beltMain?: Belt; // inner (main) asteroid belt particle cloud
+  beltKuiper?: Belt; // outer (Kuiper) belt particle cloud
 }
 
 export function createSolarState(): SolarState {
@@ -532,6 +534,112 @@ export function applyPlanetGravity(s: FlightState, planets: Planet[], planetScal
   }
 }
 
+// ---- Asteroid / Kuiper belts (representative procedural clouds) ----
+// Not a catalogue of real asteroids — a statistically faithful cloud generated
+// from the real orbital-element distributions (semi-major axis range, Rayleigh
+// inclinations, Kirkwood resonance gaps for the main belt). Deterministic via a
+// seeded RNG so it is stable across reloads. The largest real bodies (Vesta,
+// Pallas, comets, ...) are separate, fully-propagated entries.
+export interface Belt {
+  n: number;
+  ux: Float32Array; uy: Float32Array; uz: Float32Array; // orbital-plane node axis
+  vx: Float32Array; vy: Float32Array; vz: Float32Array; // in-plane perpendicular (tilted by inc)
+  a: Float32Array;     // orbit radius, world units
+  mm: Float32Array;    // mean motion, rad per sim-second
+  phase: Float32Array; // phase at epoch
+  bright: Float32Array;
+  col: [number, number, number];
+}
+
+const D2R = Math.PI / 180;
+const YEAR_SEC = 365.25 * 86400;
+
+function mulberry32(seed: number) {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Kirkwood gaps: thin particles near the strong Jupiter mean-motion resonances.
+function mainBeltKeep(a: number, rnd: () => number): boolean {
+  const gaps: [number, number, number][] = [
+    [2.065, 0.02, 0.75], // 4:1
+    [2.502, 0.03, 0.92], // 3:1
+    [2.825, 0.025, 0.88], // 5:2
+    [2.958, 0.02, 0.8], // 7:3
+    [3.279, 0.02, 0.85], // 2:1 (outer Hecuba gap)
+  ];
+  let f = 1;
+  for (const [c, w, d] of gaps) f *= 1 - d * Math.exp(-(((a - c) / w) ** 2));
+  return rnd() < f;
+}
+
+function makeBelt(
+  count: number, aMin: number, aMax: number, incSigmaDeg: number,
+  col: [number, number, number], seed: number, mainBelt: boolean
+): Belt {
+  const rnd = mulberry32(seed);
+  const ux: number[] = [], uy: number[] = [], uz: number[] = [];
+  const vx: number[] = [], vy: number[] = [], vz: number[] = [];
+  const aArr: number[] = [], mm: number[] = [], phase: number[] = [], bright: number[] = [];
+  let made = 0, guard = 0;
+  while (made < count && guard < count * 8) {
+    guard++;
+    const a = aMin + (aMax - aMin) * rnd();
+    if (mainBelt && !mainBeltKeep(a, rnd)) continue;
+    const inc = Math.min(incSigmaDeg * 2.6, incSigmaDeg * Math.sqrt(-2 * Math.log(1 - rnd()))) * D2R;
+    const Om = rnd() * Math.PI * 2;
+    const cO = Math.cos(Om), sO = Math.sin(Om), ci = Math.cos(inc), si = Math.sin(inc);
+    ux.push(cO); uy.push(sO); uz.push(0);
+    vx.push(-sO * ci); vy.push(cO * ci); vz.push(si);
+    aArr.push(a * (1 + (rnd() - 0.5) * 0.05) * AU); // slight radial scatter, world units
+    mm.push((2 * Math.PI) / (Math.pow(a, 1.5) * YEAR_SEC)); // Kepler third law
+    phase.push(rnd() * Math.PI * 2);
+    bright.push(0.35 + rnd() * 0.65);
+    made++;
+  }
+  return {
+    n: made,
+    ux: new Float32Array(ux), uy: new Float32Array(uy), uz: new Float32Array(uz),
+    vx: new Float32Array(vx), vy: new Float32Array(vy), vz: new Float32Array(vz),
+    a: new Float32Array(aArr), mm: new Float32Array(mm),
+    phase: new Float32Array(phase), bright: new Float32Array(bright), col,
+  };
+}
+
+// Generate both belts at full density once; the HUD slider renders a fraction.
+export function buildBelts(): { main: Belt; kuiper: Belt } {
+  return {
+    main: makeBelt(5000, 2.06, 3.28, 7, [150, 132, 110], 0x9e3779b1, true),
+    kuiper: makeBelt(3000, 30, 49, 12, [124, 144, 168], 0x85ebca6b, false),
+  };
+}
+
+function drawBelt(
+  ctx: CanvasRenderingContext2D, s: FlightState, belt: Belt, eye: number[], simTime: number, frac: number
+) {
+  const n = Math.floor(belt.n * frac);
+  const r = belt.col[0], g = belt.col[1], b = belt.col[2];
+  for (let k = 0; k < n; k++) {
+    const th = belt.phase[k] + belt.mm[k] * simTime;
+    const c = Math.cos(th), sn = Math.sin(th);
+    const a = belt.a[k];
+    const wx = a * (c * belt.ux[k] + sn * belt.vx[k]);
+    const wy = a * (c * belt.uy[k] + sn * belt.vy[k]);
+    const wz = a * (c * belt.uz[k] + sn * belt.vz[k]);
+    const pr = projectWorld([wx, wy, wz], eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd, s.beta);
+    if (!pr) continue;
+    const size = clamp((s.FOC * 0.004) / pr.z, 0.5, 3); // grows as you fly in among them
+    const alpha = belt.bright[k] * clamp(70 / pr.dist, 0.05, 1);
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+    ctx.fillRect(pr.x - size / 2, pr.y - size / 2, size, size);
+  }
+}
+
 // ---- MAIN RENDER ----
 // ---- planet spin axis (pole line through the sphere) ----
 function drawPlanetAxis(
@@ -658,7 +766,8 @@ export function renderSolarSystem(
   s: FlightState,
   solar: SolarState,
   planetScale: number,
-  dt: number
+  dt: number,
+  beltDensity: number
 ) {
   const eye = [s.cam[0] + solar.sway[0], s.cam[1] + solar.sway[1], s.cam[2] + solar.sway[2]];
 
@@ -668,6 +777,13 @@ export function renderSolarSystem(
   // 2. Draw orbit lines
   for (const p of solar.planets) {
     drawOrbit(ctx, p.path, eye, s.CX, s.CY, s.FOC, s.right, s.up, s.fwd, false, s.beta);
+  }
+
+  // 2.5 Draw asteroid + Kuiper belts (behind planets), fraction set by HUD
+  if (beltDensity > 0) {
+    const frac = beltDensity / 100;
+    if (solar.beltMain) drawBelt(ctx, s, solar.beltMain, eye, s.coordT, frac);
+    if (solar.beltKuiper) drawBelt(ctx, s, solar.beltKuiper, eye, s.coordT, frac);
   }
 
   // 3. Collect visible planets, sort back-to-front

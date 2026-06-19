@@ -55,6 +55,8 @@ interface AppContextType extends AppState {
   setSpeedMode: (mode: SpeedMode) => void;
   planetScale: number;
   setPlanetScale: (v: number) => void;
+  beltDensity: number;
+  setBeltDensity: (v: number) => void;
   timeScale: number;
   setTimeScale: (v: number) => void;
   hypojumpTarget: string | null;
@@ -90,6 +92,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [stars, setStars] = useState<Star[]>([]);
   const [speedMode, setSpeedMode] = useState<SpeedMode>('cruise');
   const [planetScale, setPlanetScale] = useState(10);
+  const [beltDensity, setBeltDensity] = useState(50);
   const [timeScale, setTimeScale] = useState(DEFAULT_TIME_COMPRESSION);
   const [hypojumpTarget, setHypojumpTarget] = useState<string | null>(null);
   const [orientPending, setOrientPending] = useState(false);
@@ -128,6 +131,8 @@ export function Layout({ children }: { children: ReactNode }) {
         setSpeedMode,
         planetScale,
         setPlanetScale,
+        beltDensity,
+        setBeltDensity,
         timeScale,
         setTimeScale,
         hypojumpTarget,

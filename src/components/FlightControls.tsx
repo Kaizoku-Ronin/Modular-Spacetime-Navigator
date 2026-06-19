@@ -75,12 +75,16 @@ function PlanetMenu({
   selected,
   planetScale,
   setPlanetScale,
+  beltDensity,
+  setBeltDensity,
   onPick,
   onClose,
 }: {
   selected: string | null;
   planetScale: number;
   setPlanetScale: (v: number) => void;
+  beltDensity: number;
+  setBeltDensity: (v: number) => void;
   onPick: (b: Body) => void;
   onClose: () => void;
 }) {
@@ -180,10 +184,10 @@ function PlanetMenu({
         ))}
       </div>
 
-      {/* Footer: planet-size exaggeration (true scale → inflated) + units note */}
-      <div style={{ borderTop: '1px solid rgba(70,224,210,0.12)', padding: '9px 16px 6px' }}>
+      {/* Footer: planet-size exaggeration (true scale → inflated) + belt density */}
+      <div style={{ borderTop: '1px solid rgba(70,224,210,0.12)', padding: '9px 16px 6px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <label style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', letterSpacing: '0.12em', color: '#5f7e7d', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+          <label style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', letterSpacing: '0.12em', color: '#5f7e7d', textTransform: 'uppercase', whiteSpace: 'nowrap', minWidth: '34px' }}>
             size
           </label>
           <input
@@ -201,6 +205,25 @@ function PlanetMenu({
             {planetScale}x
           </span>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+          <label style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', letterSpacing: '0.12em', color: '#5f7e7d', textTransform: 'uppercase', whiteSpace: 'nowrap', minWidth: '34px' }}>
+            belt
+          </label>
+          <input
+            className="speed-slider"
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={beltDensity}
+            onChange={(e) => setBeltDensity(parseInt(e.target.value))}
+            aria-label="Asteroid belt density"
+            style={{ flex: 1, width: 'auto' }}
+          />
+          <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#46e0d2', minWidth: '30px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+            {beltDensity}%
+          </span>
+        </div>
       </div>
       <div style={{ padding: '4px 16px 9px', fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', letterSpacing: '0.06em', color: '#5f7e7d', textTransform: 'uppercase' }}>
         AU from Sun
@@ -215,6 +238,7 @@ export function FlightControls() {
     isPaused, setPaused,
     speedMode, setSpeedMode,
     planetScale, setPlanetScale,
+    beltDensity, setBeltDensity,
     timeScale, setTimeScale,
     setHypojumpTarget,
     setOrientPending,
@@ -354,6 +378,8 @@ export function FlightControls() {
           selected={lastPick}
           planetScale={planetScale}
           setPlanetScale={setPlanetScale}
+          beltDensity={beltDensity}
+          setBeltDensity={setBeltDensity}
           onPick={pick}
           onClose={() => setPlanetsOpen(false)}
         />
